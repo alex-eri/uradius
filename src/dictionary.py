@@ -123,56 +123,60 @@ class Dictionary:
                 line = line.split(maxsplit=3)
 
                 pr = line[0]
+                try:
+                    if pr == "BEGIN-PROTOCOL":
+                        protocol = line[1]
 
-                if pr == "BEGIN-PROTOCOL":
-                    protocol = line[1]
+                    if protocol == 'RADIUS':
+                        if pr == "ATTRIBUTE":
+                            i = freeradint(line[2])
+                            n = line[1].upper()
+                            if vendor:
+                                i = (vendor, i)
+                                n = f'{self.vendors[vendor]}.{n}'
+                            t = line[3].split()
+                            if len(t) > 1:
+                                flags = t[1].split(',')
+                                t[1] = flags
+                            else:
+                                t.append([])
+                            self.types[n] = t
 
-                if protocol == 'RADIUS':
-                    if pr == "ATTRIBUTE":
-                        i = freeradint(line[2])
-                        n = line[1]
-                        if vendor:
-                            i = (vendor, i)
-                            n = f'{self.vendors[vendor]}.{n}'
-                        t = line[3].split()
-                        if len(t) > 1:
-                            flags = t[1].split(',')
-                            t[1] = flags
-                        else:
-                            t.append([])
-                        self.types[n] = t
+                            aenum.extend_enum(self.attributes, n, attribute(n, i, t))
 
-                        aenum.extend_enum(self.attributes, n, attribute(n, i, t))
-
-                    elif pr == "$INCLUDE":
-                        self.load(os.path.join(os.path.dirname(f), line[1]), vendor, protocol)
-                    elif pr == "VENDOR":
-                        i = freeradint(line[2])
-                        n = line[1]
-                        self.vendors[i] = n
-                        self.vendors[n] = i
-                    elif pr == "BEGIN-VENDOR":
-                        vendor = self.vendors[line[1]]
-                    elif pr == "END-VENDOR":
-                        vendor = None
-                    elif pr == "VALUE":
-                        att = line[1]
-                        if vendor:
-                            att = f'{self.vendors[vendor]}.{att}'
-                        n = line[2]
-                        try:
-                            att = self.attributes[att]
-                        except:
+                        elif pr == "$INCLUDE":
+                            self.load(os.path.join(os.path.dirname(f), line[1]), vendor, protocol)
+                        elif pr == "VENDOR":
+                            i = freeradint(line[2])
+                            n = line[1].upper()
+                            self.vendors[i] = n
+                            self.vendors[n] = i
+                        elif pr == "BEGIN-VENDOR":
+                            vendor = self.vendors[line[1].upper()]
+                        elif pr == "END-VENDOR":
+                            vendor = None
+                        elif pr == "VALUE":
+                            att = line[1].upper()
+                            if vendor:
+                                att = f'{self.vendors[vendor]}.{att}'
+                            n = line[2].upper()
                             try:
-                                att = self.attributes[line[1]]
+                                att = self.attributes[att]
                             except:
-                                logging.warning(f'VALUE {n} before ATTRIBUTE {att} not loaded')
+                                try:
+                                    att = self.attributes[line[1].upper()]
+                                except:
+                                    logging.warning(f'VALUE {n} before ATTRIBUTE {att} not loaded')
 
-                        if isinstance(att, Attribute):
-                            try:
-                                att.value.values[n] = freeradint(line[3])
-                            except:
-                                logging.warning(f'Values only for integer {att} suppotted. {line[3]}')
+                            if isinstance(att, Attribute):
+                                try:
+                                    att.value.values[n] = freeradint(line[3])
+                                except:
+                                    logging.warning(f'Values only for integer {att} suppotted. {line[3]}')
+                except Exception as e:
+                    logging.info(line)
+                    logging.critical(e)
+                    raise e
 
         logging.debug(f + ' loaded')
 

@@ -17,18 +17,18 @@ from protocol import UDPProtocol, TCPProtocol
 import time
 
 
-async def main(handlerclasspath):
+async def main(args):
     loop = asyncio.get_running_loop()
     servers = []
 
     #Handler = importlib.import_module(handlerclassname).Handler
 
-    spec = importlib.util.spec_from_file_location("handler", handlerclasspath)
+    spec = importlib.util.spec_from_file_location("handler", args.handler)
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
     Handler = mod.Handler
     t = time.time()
-    dct = dictionary.Dictionary('/usr/share/freeradius/dictionary')
+    dct = dictionary.Dictionary(args.dictionary)
     logging.info(time.time()-t)
     handler = type('Handler', (Handler, AbstractHandler), {'c': C})(dct, loop)
 
@@ -94,6 +94,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument("handler")
+    parser.add_argument("--dictionary", default='/usr/share/freeradius/dictionary')
     parser.add_argument("--debug", action="store_true")
     parser.add_argument("--verbosity", help="output verbosity", choices='DEBUG INFO WARNING ERROR FATAL'.split())
     args = parser.parse_args()
@@ -108,7 +109,7 @@ if __name__ == "__main__":
 
     uvloop.install()
     loop = asyncio.get_event_loop()
-    servers, handler = loop.run_until_complete(main(args.handler))
+    servers, handler = loop.run_until_complete(main(args))
     if servers:
         try:
             loop.run_forever()

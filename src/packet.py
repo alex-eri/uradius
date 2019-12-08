@@ -19,7 +19,6 @@ class Multidict(defaultdict):
     #     self
     #     return list()
 
-
     def __setitem__(self, key, value):
         if isinstance(value, (list)):
             super().__setitem__(key, value)
@@ -95,16 +94,17 @@ class Packet:
     def RequestAuthenticator(self):
         return self.__data[4:20]
 
-    def __getitem__(self, k):
+    def __getitem__(self, key):
+        key = key.upper()
         if not self.__attrs and self.__data[2]:
             self.parse()
-        if self.__attrs[k]:
-            return self.__attrs[k][-1]
+        if self.__attrs[key]:
+            return self.__attrs[key][-1]
 
     def __setitem__(self, k, v):
         if self.d:
             if type(k) == str:
-                k = self.d.attributes[k]
+                k = self.d.attributes[k.upper()]
             if type(k) in [int, tuple]:
                 k = self.d.attributes(k)
         self.__attrs[k] = v

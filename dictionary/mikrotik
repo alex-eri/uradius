@@ -1,0 +1,313 @@
+# Attributes are supported by MikroTik RouterOS.
+
+# Standard Attributes (defined in RFC 2865, 2866 and 2869)
+
+ATTRIBUTE       User-Name                    1    string
+ATTRIBUTE       User-Password                2    string  encrypt=1
+# ATTRIBUTE       Password                     2    string  encrypt=1
+ATTRIBUTE       CHAP-Password                3    string
+ATTRIBUTE       NAS-IP-Address               4    ipaddr
+ATTRIBUTE       NAS-Port                     5    integer
+ATTRIBUTE       Service-Type                 6    integer
+ATTRIBUTE       Framed-Protocol              7    integer
+ATTRIBUTE       Framed-IP-Address            8    ipaddr
+ATTRIBUTE       Framed-IP-Netmask            9    ipaddr
+ATTRIBUTE       Framed-Routing               10   integer
+ATTRIBUTE       Filter-Id                    11   string
+ATTRIBUTE       Framed-Mtu                   12   integer
+ATTRIBUTE       Framed-Compression           13   integer
+ATTRIBUTE       Login-Ip-Host                14   ipaddr
+ATTRIBUTE       Login-Service                15   integer
+ATTRIBUTE       Login-Port                   16   integer
+
+ATTRIBUTE       Reply-Message                18   string
+ATTRIBUTE       Login-Callback-Number        19   string
+ATTRIBUTE       Framed-Callback-Id           20   string
+
+ATTRIBUTE       Framed-Route                 22   string
+ATTRIBUTE       Framed-Ipx-Network           23   integer
+ATTRIBUTE       State                        24   string
+ATTRIBUTE       Class                        25   string
+ATTRIBUTE       Vendor-Specific              26   string
+ATTRIBUTE       Session-Timeout              27   integer
+ATTRIBUTE       Idle-Timeout                 28   integer
+ATTRIBUTE       Termination-Action           29   integer
+ATTRIBUTE       Called-Station-Id            30   string
+ATTRIBUTE       Calling-Station-Id           31   string
+ATTRIBUTE       NAS-Identifier               32   string
+ATTRIBUTE       Proxy-State                  33   string
+ATTRIBUTE       Login-Lat-Service            34   string
+ATTRIBUTE       Login-Lat-Node               35   string
+ATTRIBUTE       Login-Lat-Group              36   string
+ATTRIBUTE       Framed-Appletalk-Link        37   integer
+ATTRIBUTE       Framed-Appletalk-Network     38   integer
+ATTRIBUTE       Framed-Appletalk-Zone        39   string
+ATTRIBUTE       Acct-Status-Type             40   integer
+ATTRIBUTE       Acct-Delay-Time              41   integer
+ATTRIBUTE       Acct-Input-Octets            42   integer
+ATTRIBUTE       Acct-Output-Octets           43   integer
+ATTRIBUTE       Acct-Session-Id              44   string
+ATTRIBUTE       Acct-Authentic               45   integer
+ATTRIBUTE       Acct-Session-Time            46   integer
+ATTRIBUTE       Acct-Input-Packets           47   integer
+ATTRIBUTE       Acct-Output-Packets          48   integer
+ATTRIBUTE       Acct-Terminate-Cause         49   integer
+ATTRIBUTE       Acct-Input-Gigawords         52   integer
+ATTRIBUTE       Acct-Output-Gigawords        53   integer
+
+ATTRIBUTE       Event-Timestamp              55   date
+
+ATTRIBUTE       CHAP-Challenge               60   string
+ATTRIBUTE       NAS-Port-Type                61   integer
+ATTRIBUTE       Port-Limit                   62   integer
+
+ATTRIBUTE       Eap-Packet                   79   octets  concat
+ATTRIBUTE       Message-Authenticator        80   octets
+
+ATTRIBUTE       Acct-Interim-Interval        85   integer
+ATTRIBUTE       NAS-Port-Id                  87   string
+ATTRIBUTE       Framed-Pool                  88   string
+ATTRIBUTE       Chargeable-User-Id           89   string
+
+ATTRIBUTE       Nas-Ipv6-Address             95   ipv6addr
+ATTRIBUTE       Framed-Ipv6-Prefix           97   ipv6prefix
+ATTRIBUTE       Framed-Ipv6-Pool             100  string
+ATTRIBUTE       Error-Cause                  101  integer
+
+ATTRIBUTE       Delegate-Ipv6-Prefix         123  ipv6prefix
+ATTRIBUTE       Framed-Ipv6-Address          168  ipv6addr
+ATTRIBUTE       Dns-Server-Ipv6-Address      169  ipv6addr
+ATTRIBUTE       Delegate-Ipv6-Pool           171  string
+
+
+# FreeRADIUS internal attributes (they can not be transmitted via the RADIUS
+# protocol - they are used for internal purposes only)
+
+ATTRIBUTE       Auth-Type                    1000 integer
+ATTRIBUTE       Acct-Unique-Session-Id       1051 string
+ATTRIBUTE       Client-IP-Address            1052 ipaddr
+ATTRIBUTE       SQL-User-Name                1055 string
+ATTRIBUTE       NT-Password                  1058 string
+
+# Standard Values
+
+VALUE           Service-Type                 Framed                         2
+
+VALUE           Framed-Protocol              PPP                            1
+
+VALUE           Acct-Status-Type             Start                          1
+VALUE           Acct-Status-Type             Stop                           2
+VALUE           Acct-Status-Type             Interim-Update                 3
+
+VALUE           Acct-Authentic               RADIUS                         1
+VALUE           Acct-Authentic               Local                          2
+
+VALUE           NAS-Port-Type                Async                          0
+VALUE           NAS-Port-Type                ISDN-Sync                      2
+VALUE           NAS-Port-Type                Virtual                        5
+VALUE           NAS-Port-Type                Ethernet                       15
+VALUE           NAS-Port-Type                Cable                          17
+VALUE           NAS-Port-Type                Wireless-802.11                19
+
+VALUE           Acct-Terminate-Cause         User-Request                   1
+VALUE           Acct-Terminate-Cause         Lost-Carrier                   2
+VALUE           Acct-Terminate-Cause         Lost-Service                   3
+VALUE           Acct-Terminate-Cause         Idle-Timeout                   4
+VALUE           Acct-Terminate-Cause         Session-Timeout                5
+VALUE           Acct-Terminate-Cause         Admin-Reset                    6
+VALUE           Acct-Terminate-Cause         Admin-Reboot                   7
+VALUE           Acct-Terminate-Cause         Port-Error                     8
+VALUE           Acct-Terminate-Cause         NAS-Error                      9
+VALUE           Acct-Terminate-Cause         NAS-Request                    10
+VALUE           Acct-Terminate-Cause         NAS-Reboot                     11
+VALUE           Acct-Terminate-Cause         Port-Unneeded                  12
+VALUE           Acct-Terminate-Cause         Port-Preempted                 13
+VALUE           Acct-Terminate-Cause         Port-Suspended                 14
+VALUE           Acct-Terminate-Cause         Service-Unavailable            15
+VALUE           Acct-Terminate-Cause         Callback                       16
+VALUE           Acct-Terminate-Cause         User-Error                     17
+VALUE           Acct-Terminate-Cause         Host-Request                   18
+
+VALUE           Auth-Type                    System                         1
+
+
+
+# Cisco Attributes
+
+VENDOR          Cisco           9
+BEGIN-VENDOR    Cisco
+ATTRIBUTE       H323-Remote-Address          23   string
+ATTRIBUTE       H323-Connection-Id           24   string
+ATTRIBUTE       H323-Setup-Time              25   string
+ATTRIBUTE       H323-Call-Direction          26   string
+ATTRIBUTE       H323-Call-Type               27   string
+ATTRIBUTE       H323-Connect-Time            28   string
+ATTRIBUTE       H323-Disconnect-Time         29   string
+ATTRIBUTE       H323-Disconnect-Cause        30   integer
+ATTRIBUTE       H323-Voice-Quality           31   string
+ATTRIBUTE       H323-Gw-Name                 33   string
+ATTRIBUTE       H323-Call-Treatment          34   string
+
+# Cisco Values
+VALUE           H323-Disconnect-Cause        Local-Clear                    0
+VALUE           H323-Disconnect-Cause        Local-No-Accept                1
+VALUE           H323-Disconnect-Cause        Local-Decline                  2
+VALUE           H323-Disconnect-Cause        Remote-Clear                   3
+VALUE           H323-Disconnect-Cause        Remote-Refuse                  4
+VALUE           H323-Disconnect-Cause        Remote-No-Answer               5
+VALUE           H323-Disconnect-Cause        Remote-Caller-Abort            6
+VALUE           H323-Disconnect-Cause        Transport-Error                7
+VALUE           H323-Disconnect-Cause        Transport-Connect-Fail         8
+VALUE           H323-Disconnect-Cause        Gatekeeper-Clear               9
+VALUE           H323-Disconnect-Cause        Fail-No-User                   10
+VALUE           H323-Disconnect-Cause        Fail-No-Bandwidth              11
+VALUE           H323-Disconnect-Cause        No-Common-Capabilities         12
+VALUE           H323-Disconnect-Cause        Facility-Forward               13
+VALUE           H323-Disconnect-Cause        Fail-Security-Check            14
+VALUE           H323-Disconnect-Cause        Local-Busy                     15
+VALUE           H323-Disconnect-Cause        Local-Congestion               16
+VALUE           H323-Disconnect-Cause        Remote-Busy                    17
+VALUE           H323-Disconnect-Cause        Remote-Congestion              18
+VALUE           H323-Disconnect-Cause        Remote-Unreachable             19
+VALUE           H323-Disconnect-Cause        Remote-No-Endpoint             20
+VALUE           H323-Disconnect-Cause        Remote-Off-Line                21
+VALUE           H323-Disconnect-Cause        Remote-Temporary-Error         22
+
+END-VENDOR    Cisco
+
+
+# DHCP Attributes
+VENDOR          DHCP       54
+BEGIN-VENDOR    DHCP
+ATTRIBUTE       DHCP-Classless-Static-Route  121  string
+END-VENDOR      DHCP
+
+
+# Microsoft Attributes (defined in RFC 2548)
+VENDOR          Microsoft       311
+BEGIN-VENDOR    Microsoft
+
+ATTRIBUTE       MS-CHAP-Response             1    string
+ATTRIBUTE       MS-MPPE-Encryption-Policy    7    string
+ATTRIBUTE       MS-MPPE-Encryption-Types     8    string
+ATTRIBUTE       MS-CHAP-Domain               10   string
+ATTRIBUTE       MS-CHAP-Challenge            11   string
+ATTRIBUTE       MS-CHAP-Mppe_Keys            12   string
+ATTRIBUTE       MS-MPPE-Send-Key             16   string  encrypt=2
+ATTRIBUTE       MS-MPPE-Recv-Key             17   string  encrypt=2
+ATTRIBUTE       MS-CHAP2-Response            25   string
+ATTRIBUTE       MS-CHAP2-Success             26   string
+ATTRIBUTE       MS-Primary-Dns-Server        28   ipaddr
+ATTRIBUTE       MS-Secondary-Dns-Server      29   ipaddr
+ATTRIBUTE       MS-Primary-Nbns-Server       30   ipaddr
+ATTRIBUTE       MS-Secondary-Nbns-Server     31   ipaddr
+
+END-VENDOR    Microsoft
+
+
+# Ascend Attributes
+VENDOR          Ascend          529
+BEGIN-VENDOR    Ascend
+
+ATTRIBUTE       Ascend-Client-Gateway       132   ipaddr
+ATTRIBUTE       Ascend-Data-Rate            197   integer
+ATTRIBUTE       Ascend-Xmit-Rate            255   integer
+END-VENDOR    Ascend
+
+
+# Redback Attributes
+VENDOR          Redback       2352
+BEGIN-VENDOR    Redback
+ATTRIBUTE       Redback-Agent-Remote-Id     96  string
+ATTRIBUTE       Redback-Agent-Circuit-Id    97  string
+END-VENDOR      Redback
+
+
+# ADSL Attributes
+VENDOR          ADSL       3561
+BEGIN-VENDOR    ADSL
+ATTRIBUTE       ADSL-Agent-Circuit-Id                       1  string
+ATTRIBUTE       ADSL-Agent-Remote-Id                        2  string
+ATTRIBUTE       ADSL-Actual-Data-Rate-Upstream              0x81  integer
+ATTRIBUTE       ADSL-Actual-Data-Rate-Downstream            0x82  integer
+ATTRIBUTE       ADSL-Minimum-Data-Rate-Upstream             0x83  integer
+ATTRIBUTE       ADSL-Minimum-Data-Rate-Downstream           0x84  integer
+ATTRIBUTE       ADSL-Attainable-Data-Rate-Upstream          0x85  integer
+ATTRIBUTE       ADSL-Attainable-Data-Rate-Downstream        0x86  integer
+ATTRIBUTE       ADSL-Max-Data-Rate-Upstream                 0x87  integer
+ATTRIBUTE       ADSL-Max-Data-Rate-Downstream               0x88  integer
+ATTRIBUTE       ADSL-Min-Data-Rate-Upstream                 0x89  integer
+ATTRIBUTE       ADSL-Min-Data-Rate-Downstream               0x8a  integer
+ATTRIBUTE       ADSL-Max-Interleaving-Delay-Upstream        0x8b  integer
+ATTRIBUTE       ADSL-Actual-Interleaving-Delay-Upstream     0x8c  integer
+ATTRIBUTE       ADSL-Max-Interleaving-Delay-Downstream      0x8d  integer
+ATTRIBUTE       ADSL-Actual-Interleaving-Delay-Downstream   0x8e  integer
+ATTRIBUTE       ADSL-Encap                                  0x90  octets
+END-VENDOR      ADSL
+
+
+
+# WISPr Attributes (defined in httpwww.wi-fi.orggetfile.aspf=WISPr_V1.0.pdf)
+VENDOR          WISPr           14122
+BEGIN-VENDOR    WISPr
+
+ATTRIBUTE       WISPr-Location-Id                  1    string
+ATTRIBUTE       WISPr-Location-Name                2    string
+ATTRIBUTE       WISPr-Logoff-URL                   3    string
+ATTRIBUTE       WISPr-Redirection-URL              4    string
+ATTRIBUTE       WISPr-Bandwidth-Min-Up             5    integer
+ATTRIBUTE       WISPr-Bandwidth-Min-Down           6    integer
+ATTRIBUTE       WISPr-Bandwidth-Max-Up             7    integer
+ATTRIBUTE       WISPr-Bandwidth-Max-Down           8    integer
+ATTRIBUTE       WISPr-Session-Terminate-Time       9    string
+ATTRIBUTE       WISPr-Session-Terminate-End-Of-Day 10   string
+ATTRIBUTE       WISPr-Billing-Class-Of-Service     11   string
+
+END-VENDOR      WISPr
+
+
+# MikroTik Attributes
+VENDOR          Mikrotik        14988
+BEGIN-VENDOR    Mikrotik
+
+ATTRIBUTE       Mikrotik-Recv-Limit             1   integer
+ATTRIBUTE       Mikrotik-Xmit-Limit             2   integer
+ATTRIBUTE       Mikrotik-Group                  3   string
+ATTRIBUTE       Mikrotik-Wireless-Forward       4   integer
+ATTRIBUTE       Mikrotik-Wireless-Skip-Dot1x    5   integer
+ATTRIBUTE       Mikrotik-Wireless-Enc-Algo      6   integer
+ATTRIBUTE       Mikrotik-Wireless-Enc-Key       7   string
+ATTRIBUTE       Mikrotik-Rate-Limit             8   string
+ATTRIBUTE       Mikrotik-Realm                  9   string
+ATTRIBUTE       Mikrotik-Host-IP                10  ipaddr
+ATTRIBUTE       Mikrotik-Mark-Id                11  string
+ATTRIBUTE       Mikrotik-Advertise-URL          12  string
+ATTRIBUTE       Mikrotik-Advertise-Interval     13  integer
+ATTRIBUTE       Mikrotik-Recv-Limit-Gigawords   14  integer
+ATTRIBUTE       Mikrotik-Xmit-Limit-Gigawords   15  integer
+ATTRIBUTE       Mikrotik-Wireless-PSK           16  string
+ATTRIBUTE       Mikrotik-Total-Limit            17  integer
+ATTRIBUTE       Mikrotik-Total-Limit-Gigawords  18  integer
+ATTRIBUTE       Mikrotik-Address-List           19  string
+ATTRIBUTE       Mikrotik-Wireless-MPKey         20  string
+ATTRIBUTE       Mikrotik-Wireless-Comment       21  string
+ATTRIBUTE       Mikrotik-Delegated-IPv6-Pool    22  string
+ATTRIBUTE       Mikrotik_DHCP_Option_Set        23  string
+ATTRIBUTE       Mikrotik_DHCP_Option_Param_STR1 24  string
+ATTRIBUTE       Mikortik_DHCP_Option_Param_STR2 25  string
+ATTRIBUTE       Mikrotik_Wireless_VLANID        26  integer
+ATTRIBUTE       Mikrotik_Wireless_VLANIDtype    27  integer
+ATTRIBUTE       Mikrotik_Wireless_Minsignal     28  string
+ATTRIBUTE       Mikrotik_Wireless_Maxsignal     29  string
+
+# MikroTik Values
+
+VALUE           Mikrotik-Wireless-Enc-Algo            No-encryption                  0
+VALUE           Mikrotik-Wireless-Enc-Algo            40-bit-WEP                     1
+VALUE           Mikrotik-Wireless-Enc-Algo            104-bit-WEP                    2
+VALUE           Mikrotik-Wireless-Enc-Algo            AES-CCM                        3
+VALUE           Mikrotik-Wireless-Enc-Algo            TKIP                           4
+VALUE           Mikrotik_Wireless_VLANIDtype          802.1q                         0
+VALUE           Mikrotik_Wireless_VLANIDtype          802.1ad                        1
+
+END-VENDOR      Mikrotik

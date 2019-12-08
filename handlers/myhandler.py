@@ -13,13 +13,14 @@ class Handler:
         pass
 
     async def on_preauth(self, request):
+        print(request['user-password'])
         for k,v in request.items():
             logger.debug((k, v))
         pass
 
     async def on_auth(self, request, response):
         print('++++')
-        response["Cisco.Cisco-Fax-Dsn-Address"] = "gg"
+        response["Mikrotik.Mikrotik-RealM"] = "gg"
         response[16] = 8000
         response[(14559, 8)] = "2"
         for k,v in response.items():
