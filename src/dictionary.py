@@ -7,6 +7,7 @@ from collections import defaultdict
 class Enum(aenum.Enum):
     @classmethod
     def _missing_(self, value):
+        value = attribute(value, value, 'octets')
         aenum.extend_enum(self, f"Unknown.{value}", value)
         return self(value)
 
@@ -33,15 +34,11 @@ class MACAddress(bytes):
         return self.__class__.__name__ + ': ' + self.__str__()
 
 
-class StandardAttribute(int, Attribute):
+class UnknownAttribute(str, Attribute):
     pass
 
-    # def __init__(self, name, value, typ):
-    #     self.name = name
-    #     self.type = typ
-    #     self.value = value
-    #     self.values = {}
-
+class StandardAttribute(int, Attribute):
+    pass
 
 class VendorAttribute(tuple, Attribute):
     pass
@@ -53,7 +50,7 @@ def attribute(n, v, t):
     elif type(v) == int:
         a = StandardAttribute(v)
     else:
-        a = Attribute()
+        a = UnknownAttribute()
 
     a.name = n
     a.type = t

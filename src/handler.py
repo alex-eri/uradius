@@ -5,7 +5,6 @@ class AbstractHandler:
         self.attributes = {}
         if dct:
             self.attributes = dct.attributes
-        self.nases = {}
         self.ready = loop.create_task(self.on_init())
 
     async def on_init(self):
@@ -56,3 +55,14 @@ class AbstractHandler:
         """
         raise NotImplementedError
 
+    async def on_preacct(self, request):
+        """
+        packet is valid, do username canonization and similar stuff here
+        """
+        raise NotImplementedError
+
+    async def on_acct(self, request, response):
+        """
+        write database and set response attributes here
+        """
+        raise NotImplementedError

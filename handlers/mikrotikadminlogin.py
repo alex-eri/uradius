@@ -23,8 +23,6 @@ class Handler:
 
     async def on_auth(self, request, response):
         sucess = request.mschap2('132')
-        if sucess:
-            response['Microsoft.MS-CHAP2-Success'] = sucess
 #        response["Mikrotik.Mikrotik-RealM"] = "gg"
 #        response[16] = 8000
 #        response[(14559, 8)] = "2"

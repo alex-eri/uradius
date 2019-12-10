@@ -8,6 +8,9 @@ from datetime import datetime
 import dictionary
 import logging
 from collections import defaultdict
+import mschap.mschap as mschap
+import protocol
+
 Identifiers = itertools.cycle(range(256))
 
 
@@ -38,11 +41,13 @@ class Multidict(defaultdict):
 
 
 class Packet:
-    def __init__(self, data=b'', remote=None, secret=None, dictionary=None):
+    def __init__(self, data=b'', remote=None, secret=None, dictionary=None, cls=None):
+        self.cls = cls
         self.d = dictionary
         self.remote = remote
+        self.payload = {}
+        self.nas = None
         self.secret = secret
-
         if data:
             self.__data = data
         else:
@@ -51,30 +56,48 @@ class Packet:
         self.__attrs = Multidict()
         self.__ma_cursor = None
         self.__reply = None
+        self.__secret
+
+    @property
+    def secret(self):
+        return self.__secret
+
+    @secret.setter
+    def secret(self,v):
+        if type(v) == str:
+            v = v.encode()
+        self.__secret = v
+
+    def keys(self):
+        for k, v in self.__attrs.items():
+            yield k
 
     def items(self):
         if not self.__attrs and self.__data[2]:
             self.parse()
-        if self.d:
-            for k, v in self.__attrs.items():
-                if not isinstance(k, dictionary.Attribute):
-                    k = self.d.attributes(k)
-                yield k, self.decode(k, v)
-        else:
-            for k, v in self.__attrs.items():
-                yield k, v
+        for k, v in self.__attrs.items():
+            yield k, self.decode(k, v)
+
 
     def reply(self, code=C.AccessReject):
         if not self.__reply:
-            data = self.__data[:20]
+            data = bytearray(20)
+            data[4:20] = self.RequestAuthenticator
+            data[3] = 0
+            data[2] = 0
+            data[1] = self.Identifier
             data[0] = code
+            if self.cls == protocol.RadsecProtocol:
+                secret = b'radsec'
+            else:
+                secret=self.secret
             self.__reply = Packet(
                 data=data,
-                secret=self.secret,
+                secret=secret,
                 dictionary=self.d
                 )
             if self.__ma_cursor:
-                self.__reply[C.MessageAuthenticator] = None
+                self.__reply[C.MessageAuthenticator] = []
 
         return self.__reply
 
@@ -95,19 +118,23 @@ class Packet:
         return self.__data[4:20]
 
     def __getitem__(self, key):
-        key = key.upper()
+        if type(key) == str:
+            key = key.upper()
         if not self.__attrs and self.__data[2]:
             self.parse()
+        if type(key) == str:
+            key = self.d.attributes[key.upper()]
+        elif type(key) in [int, tuple]:
+            key = self.d.attributes(key)
         if self.__attrs[key]:
-            return self.__attrs[key][-1]
+            return self.decode(key, self.__attrs[key][-1])
 
-    def __setitem__(self, k, v):
-        if self.d:
-            if type(k) == str:
-                k = self.d.attributes[k.upper()]
-            if type(k) in [int, tuple]:
-                k = self.d.attributes(k)
-        self.__attrs[k] = v
+    def __setitem__(self, key, v):
+        if type(key) == str:
+            key = self.d.attributes[key.upper()]
+        elif type(key) in [int, tuple]:
+            key = self.d.attributes(key)
+        self.__attrs[key] = v
 
     @property
     def Attributes(self):
@@ -145,7 +172,7 @@ class Packet:
             if k == C.MessageAuthenticator:
                 self.__ma_cursor = cursor
 
-            self.__attrs[k] += [v]
+            self.__attrs[self.d.attributes(k)] += [v]
             cursor += l2
 
     def decript1(self, v):
@@ -166,7 +193,7 @@ class Packet:
         """
         Set attribute to speciefed value. If attribute exists new attribute inserted.
         """
-        self.__attr[key] = value
+        self.__setitem__(key, value)
 
     def reset(self, key, value):
         """
@@ -174,7 +201,7 @@ class Packet:
         """
         self.__attrs.reset(key, value)
 
-    def decode(self, k, v):
+    def decode(self, key, v):
         """
         The type field can be one of the standard types:
 
@@ -199,38 +226,46 @@ class Packet:
          tlv          Type-Length-Value (allows nested attributes)
          ipv4prefix   IPv4 Prefix as given in RFC 6572.
         """
+        if type(key) == str:
+            key = self.d.attributes[key.upper()]
+        elif type(key) in [int, tuple]:
+            key = self.d.attributes(key)
 
         if isinstance(v, bytearray):
-            typ, flags = k.value.type
-            if 'has_tag' in flags:
-                logging.warning(f'Tags not supported')
-            if 'encrypt=1' in flags:
-                v = self.decript1(v)
-            if 'concat' in flags and len(self.__attr[k]) > 1:
-                v = [bytearray().join(self.__attr[k])]
-                self.__attr.reset(k, v)
+            try:
+                typ, flags = key.value.type
+                if 'has_tag' in flags:
+                    logging.warning(f'Tags not supported')
+                if 'encrypt=1' in flags:
+                    v = self.decript1(v)
+                if 'concat' in flags and len(self.__attr[key]) > 1:
+                    v = [bytearray().join(self.__attr[key])]
+                    self.__attr.reset(key, v)
 
-            if typ in ['octets', 'ipaddr', 'ipv6addr', 'ether', 'ipv6prefix', 'ipv4prefix']:
-                v = bytes(v)
-                if typ in ['ipaddr', 'ipv6addr']:
-                    v = ipaddress.ip_address(v)
-                elif typ == 'ether':
-                    v = dictionary.MACAddress(v)
-                elif typ == 'ipv4prefix':
-                    v = ipaddress.IPv4Network((v[2:], v[1]))
-                elif typ == 'ipv6prefix':
-                    v = ipaddress.IPv6Network(((v[2:]+bytes(16))[:16], v[1]))
+                if typ in ['octets', 'ipaddr', 'ipv6addr', 'ether', 'ipv6prefix', 'ipv4prefix']:
+                    v = bytes(v)
+                    if typ in ['ipaddr', 'ipv6addr']:
+                        v = ipaddress.ip_address(v)
+                    elif typ == 'ether':
+                        v = dictionary.MACAddress(v)
+                    elif typ == 'ipv4prefix':
+                        v = ipaddress.IPv4Network((v[2:], v[1]))
+                    elif typ == 'ipv6prefix':
+                        v = ipaddress.IPv6Network(((v[2:]+bytes(16))[:16], v[1]))
 
-            elif typ == 'string':
-                v = v.decode()
-            elif typ in ['integer', 'integer64', 'short', 'byte', 'date', 'ifid']:
-                v = int.from_bytes(v, 'big')
-                if typ == 'date':
-                    v = datetime.fromtimestamp(v)
-            elif typ == 'signed':
-                v = int.from_bytes(v, 'big', True)
-            else:
-                logging.warning(f'Type "{typ}" not supported')
+                elif typ == 'string':
+                    v = v.decode()
+                elif typ in ['integer', 'integer64', 'short', 'byte', 'date', 'ifid']:
+                    v = int.from_bytes(v, 'big')
+                    if typ == 'date':
+                        v = datetime.fromtimestamp(v)
+                elif typ == 'signed':
+                    v = int.from_bytes(v, 'big', True)
+                else:
+                    logging.warning(f'Type "{typ}" not supported')
+            except ValueError as e:
+                logging.error(e)
+                logging.info((repr(key), repr(v)))
 
         return v
 
@@ -252,8 +287,8 @@ class Packet:
         resp = self.__data[:20].copy()
         body = bytearray()
         for k, v in self.__attrs.items():
-#            if isinstance(k, dictionary.Enum):
-#                k = k.value
+            if isinstance(k, dictionary.Enum):
+                k = k.value
             if k == C.MessageAuthenticator:
                 continue
             v = Packet.encode(v)
@@ -303,13 +338,68 @@ class Packet:
 
         return bytes(resp)
 
+    def check_password(self, cleartext="", response=None):
+        return self.pap(cleartext) or self.chap(cleartext) or self.mschap(cleartext) or self.mschap2(cleartext, response)
 
+    def pap(self, cleartext=""):
+        if C.UserPassword in self.keys():
+            try:
+                return self[C.UserPassword] == cleartext
+            except UnicodeDecodeError:
+                return
+
+    def chap(self, cleartext):
+        if C.CHAPPassword in self.keys():
+
+            chap_challenge = self[C.CHAPChallenge]
+            chap_password  = self[C.CHAPPassword]
+
+            chap_id = bytes([chap_password[0]])
+            chap_password = chap_password[1:]
+
+            m = hashlib.md5()
+            m.update(chap_id)
+            m.update(cleartext.encode(encoding='utf-8', errors='strict'))
+            m.update(chap_challenge)
+
+            return chap_password == m.digest()
+
+    def mschap(self, cleartext):
+        if C.MSCHAPChallenge in self.keys() and C.MSCHAPResponse in self.keys():
+            return mschap.generate_nt_response_mschap(
+                self[C.MSCHAPChallenge], cleartext
+            ) == self[C.MSCHAPResponse][26:]
+
+    def mschap2(self, cleartext, response):
+        if C.MSCHAPChallenge in self.keys() and C.MSCHAP2Response in self.keys():
+            ms_chap_response = self[C.MSCHAP2Response]
+
+            if 50 == len(ms_chap_response):
+                nt_response = ms_chap_response[26:50]
+                peer_challenge = ms_chap_response[2:18]
+                authenticator_challenge = self[C.MSCHAPChallenge]
+                user = self[C.UserName].encode()
+
+                success = mschap.generate_nt_response_mschap2(
+                    authenticator_challenge,
+                    peer_challenge,
+                    user,
+                    cleartext) == nt_response
+                if success:
+                    auth_resp = mschap.generate_authenticator_response(
+                        cleartext,
+                        nt_response,
+                        peer_challenge,
+                        authenticator_challenge,
+                        user)
+                    response[C.MSCHAP2Success] = auth_resp
+                    return True
 
     def as_bytes(self, k):
-        return self.__attrs[k]
+        return self.__attrs[k][-1]
 
     def as_string(self, k, encoding='UTF8'):
-        return self.__attrs[k].decode(encoding)
+        return self.__attrs[k][-1].decode(encoding)
 
     def as_byte(self, k):
         return struct.unpack('!B', self.self.__attrs[k])

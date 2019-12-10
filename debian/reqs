@@ -1,0 +1,5 @@
+aenum
+uvloop
+cryptography
+pycryptodome
+asyncpg

@@ -187,16 +187,16 @@ END-VENDOR      DHCP
 VENDOR          Microsoft       311
 BEGIN-VENDOR    Microsoft
 
-ATTRIBUTE       MS-CHAP-Response             1    string
+ATTRIBUTE       MS-CHAP-Response             1    octets
 ATTRIBUTE       MS-MPPE-Encryption-Policy    7    string
 ATTRIBUTE       MS-MPPE-Encryption-Types     8    string
 ATTRIBUTE       MS-CHAP-Domain               10   string
-ATTRIBUTE       MS-CHAP-Challenge            11   string
-ATTRIBUTE       MS-CHAP-Mppe_Keys            12   string
-ATTRIBUTE       MS-MPPE-Send-Key             16   string  encrypt=2
-ATTRIBUTE       MS-MPPE-Recv-Key             17   string  encrypt=2
-ATTRIBUTE       MS-CHAP2-Response            25   string
-ATTRIBUTE       MS-CHAP2-Success             26   string
+ATTRIBUTE       MS-CHAP-Challenge            11   octets
+ATTRIBUTE       MS-CHAP-Mppe_Keys            12   octets
+ATTRIBUTE       MS-MPPE-Send-Key             16   octets  encrypt=2
+ATTRIBUTE       MS-MPPE-Recv-Key             17   octets  encrypt=2
+ATTRIBUTE       MS-CHAP2-Response            25   octets
+ATTRIBUTE       MS-CHAP2-Success             26   octets
 ATTRIBUTE       MS-Primary-Dns-Server        28   ipaddr
 ATTRIBUTE       MS-Secondary-Dns-Server      29   ipaddr
 ATTRIBUTE       MS-Primary-Nbns-Server       30   ipaddr

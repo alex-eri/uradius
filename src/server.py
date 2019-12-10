@@ -12,7 +12,7 @@ import constants as C
 import dictionary
 
 from handler import AbstractHandler
-from protocol import UDPProtocol, TCPProtocol
+from protocol import UDPProtocol, TCPProtocol, RadsecProtocol
 
 import time
 
@@ -32,13 +32,13 @@ async def main(args):
     logging.info(time.time()-t)
     handler = type('Handler', (Handler, AbstractHandler), {'c': C})(dct, loop)
 
-    if 'udp':
+    if args.udp:
         servers.append((await loop.create_datagram_endpoint(
             lambda: UDPProtocol(loop, handler), local_addr=('0.0.0.0', 1812))))
         servers.append((await loop.create_datagram_endpoint(
             lambda: UDPProtocol(loop, handler), local_addr=('0.0.0.0', 1813))))
 
-    if 'tcp':
+    if args.tcp:
 
         server = await loop.create_server(lambda: TCPProtocol(loop, handler), '0.0.0.0', 1812)
         await server.start_serving()
@@ -47,28 +47,38 @@ async def main(args):
         await server.start_serving()
         servers.append(server)
 
-    if 'tls':
+    if args.tls_generate:
+        import tlscert
+        import socket
+        c, k = tlscert.generate_selfsigned_cert(
+                socket.gethostname()
+                )
+        with open(args.tls_cert,'wb') as f:
+            f.write(c)
+        with open(args.tls_key,'wb') as f:
+            f.write(k)
 
-        server_context = ssl.SSLContext(ssl.PROTOCOL_TLS)
+    if args.tls:
+
+        server_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+        server_context.check_hostname = False
+        server_context.verify_mode = ssl.CERT_NONE
+
         try:
             server_context.load_cert_chain(
-                    (pathlib.Path(__file__).parent /
-                        'certs' / 'ssl_cert.pem'),
-                    (pathlib.Path(__file__).parent /
-                        'certs' / 'ssl_key.pem'))
-
-            server_context.check_hostname = False
-            server_context.verify_mode = ssl.CERT_NONE
-
-            server = await loop.create_server(lambda: TCPProtocol(loop, handler), '0.0.0.0', 2083, ssl=server_context)
-            await server.start_serving()
-            servers.append(server)
+                    args.tls_cert,
+                    args.tls_key)
 
         except FileNotFoundError:
-            "Certificates not found"
-            pass
+            logging.critical("Certificates not found")
+            return
         except Exception as e:
             raise e
+
+        server = await loop.create_server(lambda: RadsecProtocol(loop, handler), '0.0.0.0', 2083, ssl=server_context)
+        await server.start_serving()
+        servers.append(server)
+
 
     await handler.ready
     logging.info('ready')
@@ -92,11 +102,19 @@ async def close(servers, handler):
 
 if __name__ == "__main__":
 
+    print(pathlib.Path(__file__))
+
     parser = argparse.ArgumentParser()
     parser.add_argument("handler")
     parser.add_argument("--dictionary", default='/usr/share/freeradius/dictionary')
     parser.add_argument("--debug", action="store_true")
     parser.add_argument("--verbosity", help="output verbosity", choices='DEBUG INFO WARNING ERROR FATAL'.split())
+    parser.add_argument("--tcp", action="store_true")
+    parser.add_argument("--udp", action="store_true")
+    parser.add_argument("--tls", action="store_true")
+    parser.add_argument("--tls-generate", action="store_true")
+    parser.add_argument("--tls-cert", default=(pathlib.Path(__file__).parent / '..' /'certs' / 'ssl_cert.pem' ))
+    parser.add_argument("--tls-key", default=(pathlib.Path(__file__).parent / '..' / 'certs' / 'ssl_key.pem') )
     args = parser.parse_args()
 
     level = logging.ERROR

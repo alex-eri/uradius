@@ -1,2 +1,8 @@
-$INCLUDE coovachilli
-$INCLUDE mikrotik
+$INCLUDE dictionary.dhcp
+$INCLUDE dictionary.rfc2865
+$INCLUDE dictionary.microsoft
+$INCLUDE dictionary.rfc2866
+$INCLUDE dictionary.chillispot
+$INCLUDE dictionary.mikrotik
+$INCLUDE dictionary.rfc2869
+$INCLUDE dictionary.ascend.illegal

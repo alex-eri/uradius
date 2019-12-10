@@ -8,14 +8,10 @@ import ssl
 import uvloop
 import importlib
 import constants as C
-
 from handler import AbstractHandler
 from packet import Packet
-
 import dictionary
-
 import logging
-
 from cachetools import TTLCache
 from asyncache import cached
 
@@ -40,28 +36,36 @@ class AbstractProtocol(asyncio.Protocol):
         self.transport = None
 
     async def request(self, data, addr):
-        request = Packet(data=data, remote=addr, dictionary=self.handler.d)
+        request = Packet(data=data, remote=addr, dictionary=self.handler.d, cls=type(self))
         nas = await nas_cached(self.handler.on_nas)(request)
+        request.nas = nas
         if not nas:
             return
 
         request.secret = nas['secret']
         request.check()
-        await self.handler.on_preauth(request)
-        responce = request.reply()
 
-        code = await self.handler.on_auth(request, responce)
-        if code is True:
-            responce.Code = C.AccessAccept
-        elif code is False:
-            responce.Code = C.AccessReject
-        elif isinstance(code, int):
-            responce.Code = code
+        if request.Code == C.AccessRequest:
+            await self.handler.on_preauth(request)
+            responce = request.reply()
 
-        if responce.Code == C.AccessAccept:
-            await self.handler.on_accept(request, responce)
-        elif responce.Code == C.AccessReject:
-            await self.handler.on_reject(request, responce)
+            code = await self.handler.on_auth(request, responce)
+            if code is True:
+                responce.Code = C.AccessAccept
+            elif code is False:
+                responce.Code = C.AccessReject
+            elif isinstance(code, int):
+                responce.Code = code
+
+            if responce.Code == C.AccessAccept:
+                await self.handler.on_accept(request, responce)
+            elif responce.Code == C.AccessReject:
+                await self.handler.on_reject(request, responce)
+        elif request.Code == C.AccountingRequest:
+            await self.handler.on_preacct(request)
+            responce = request.reply(C.AccountingResponse)
+            await self.handler.on_acct(request, responce)
+
         await self.responce(request, responce)
 
     async def responce(self, request, responce):
@@ -76,6 +80,12 @@ class TCPProtocol(AbstractProtocol):
     def data_received(self, data):
         addr = self.transport.get_extra_info('peername')
         self.loop.create_task(self.request(data, addr))
+
+
+class RadsecProtocol(TCPProtocol):
+    "TCP wrapped into TLS, secret always 'radsec'"
+    "TODO cert check"
+    pass
 
 
 class UDPProtocol(AbstractProtocol):
