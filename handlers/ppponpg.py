@@ -1,22 +1,20 @@
 import asyncpg
 import logging
 import json
-import dictionary
 
 logger = logging.getLogger('ppp')
 
-
 NASQ='''select * from networkaccess.nas where
           enabled and
-          (identity = $2 and ip = $1::inet) or
-          (identity IS NULL and ip = $1::inet) or
-          (identity = $2 and ip IS NULL) ORDER BY ip DESC NULLS LAST, identity DESC NULLS LAST LIMIT 1'''
+          (identity = $2 and ip && $1::cidr) or
+          (identity = '' and ip && $1::cidr)
+           ORDER BY ip DESC NULLS LAST, identity DESC NULLS LAST LIMIT 1'''
 
 USERQ = '''
 select password,ip,bandwidth,routes from networkaccess.devices WHERE
     enabled and
     gid = $1 and
-    (nas = $2 or nas is null) and
+    (nas @> $2 or nas is null) and
     username = $3
 '''
 
@@ -35,8 +33,6 @@ async def conninit(conn):
             schema='pg_catalog'
         )
 
-# def detect_vendors(req):
-#     return list( x[0] for x in req.keys() if isinstance(x.value, tuple) )
 
 class Handler:
     async def on_init(self):
@@ -56,36 +52,30 @@ class Handler:
         return dict(request.nas)
 
     async def on_close(self):
-        pass
+        await self.pool.close()
 
     async def on_preauth(self, request):
-        for k, v in request.items():
-            logger.debug((k, v))
         pass
 
     async def on_preacct(self, request):
-        for k, v in request.items():
-            logger.debug((k, v))
+        pass
 
     async def on_auth(self, request, response):
-        sucess = False
+        success = False
         if request['Service-Type'] == 1:
-            'sysadmin'
             async with self.pool.acquire() as conn:
-                c = await conn.fetchrow(ADMINQ, request.nas['gid'] , request['user-name'])
+                c = await conn.fetchrow(ADMINQ, request.nas['gid'], request['user-name'])
             if c:
-                sucess = request.check_password(c['password'], response)
-            if sucess:
+                success = request.check_password(c['password'], response)
+            if success:
                 response['Mikrotik.Mikrotik-Group'] = c['group']
-        #elif request['Service-Type'] == 2:
         else:
-            'user'
             async with self.pool.acquire() as conn:
-                c = await conn.fetchrow(USERQ, request.nas['gid'] , request.nas['id'], request['user-name'])
+                c = await conn.fetchrow(USERQ, request.nas['gid'], request.nas['id'], request['user-name'])
             logging.debug(c)
             if c:
-                sucess = request.check_password(c['password'], response)
-            if sucess:
+                success = request.check_password(c['password'], response)
+            if success:
                 if c['ip']:
                     response['Framed-IP-Address'] = c['ip'].ip
                     response['Framed-IP-Netmask'] = c['ip'].netmask
@@ -94,11 +84,16 @@ class Handler:
                     if request.nas['type'] == "mikrotik":
                         response['Mikrotik.Mikrotik-Rate-Limit'] = f'{rate}M {rate*5}M {rate*1.5}M 10'
                     else:
-                        response[197] = rate << 20
+                        response['X-Ascend-Data-Rate'] = rate << 20
+                if c['ippool']:
+                    response['Framed-Pool'] = c['ippool']
+                if c['routes']:
+                    response['Framed-Route'] = c['routes']
+
 
         for k, v in response.items():
             logger.debug((k, v))
-        return sucess
+        return success
 
     async def on_acct(self, request, response):
         for k, v in response.items():

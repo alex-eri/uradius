@@ -37,7 +37,7 @@ def generate_selfsigned_cert(hostname, ip_addresses=None, key=None):
     san = x509.SubjectAlternativeName(alt_names)
 
     # path_len=0 means this cert can only sign itself, not other certs.
-    basic_contraints = x509.BasicConstraints(ca=True, path_length=0)
+    basic_contraints = x509.BasicConstraints(ca=True, path_length=1)
     now = datetime.utcnow()
     cert = (
         x509.CertificateBuilder()

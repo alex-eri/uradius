@@ -4,20 +4,6 @@ import aenum
 
 from collections import defaultdict
 
-class Enum(aenum.Enum):
-    @classmethod
-    def _missing_(self, value):
-        value = attribute(value, value, 'octets')
-        aenum.extend_enum(self, f"Unknown.{value}", value)
-        return self(value)
-
-class Attribute:
-    name = None
-    type = None
-
-    def __repr__(self):
-        return f'Attribute: {self.name}' + super().__repr__() + ' (' + repr(self.type) + ')'
-
 
 class MACAddress(bytes):
     def __new__(cls, mac ,*a,**kw):
@@ -32,6 +18,22 @@ class MACAddress(bytes):
 
     def __repr__(self):
         return self.__class__.__name__ + ': ' + self.__str__()
+
+
+class Enum(aenum.Enum):
+    @classmethod
+    def _missing_(cls, value):
+        value = attribute(value, value, 'octets')
+        aenum.extend_enum(cls, f"Unknown.{value}", value)
+        return cls(value)
+
+
+class Attribute:
+    name = None
+    type = None
+
+    def __repr__(self):
+        return f'Attribute: {self.name}' + super().__repr__() + ' (' + repr(self.type) + ')'
 
 
 class UnknownAttribute(str, Attribute):
@@ -57,16 +59,14 @@ def attribute(n, v, t):
     return a
 
 
-
 def freeradint(i):
     try:
-        return int(i, 0)
-    except :
-       if '.' in i:
-           r = 0
-           for a in i.split('.'):
-                r = (r<<8) +int(a,0)
-
+        r = 0
+        for a in i.split('.'):
+            r = (r << 8) + int(a, 0)
+        return r
+    except ValueError:
+        return
 
 
 class Attr:
@@ -83,7 +83,6 @@ class Attr:
         return self.value.type
 
 
-
 class Value:
     def __eq__(self, value):
         return self.value == value
@@ -95,6 +94,7 @@ class Value:
 def values_factory():
     return Enum('Value', {}, type=Value)
 
+
 class Dictionary:
     def __init__(self, f):
         self.values = defaultdict(values_factory)
@@ -105,7 +105,6 @@ class Dictionary:
 
     def loadvalues(self):
         pass
-
 
     def load(self, f, vendor=None, protocol='RADIUS'):
         logging.debug(f)
