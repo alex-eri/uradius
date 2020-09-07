@@ -1,8 +1,6 @@
 # import ctypescrypto.cipher
 import Crypto.Cipher.DES
 
-
-
 # class DES:
 #     des = None
 #     def __init__(self, key):

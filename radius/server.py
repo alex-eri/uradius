@@ -8,11 +8,11 @@ import importlib
 import importlib.util
 import logging
 
-import constants as C
-import dictionary
+from . import constants as C
+from . import dictionary
 
-from handler import AbstractHandler
-from protocol import UDPProtocol, TCPProtocol, RadsecProtocol
+from .handler import AbstractHandler
+from .protocol import UDPProtocol, TCPProtocol, RadsecProtocol
 
 import time
 
@@ -23,22 +23,22 @@ async def main(args):
 
     #Handler = importlib.import_module(handlerclassname).Handler
 
-    spec = importlib.util.spec_from_file_location("handler", args.handler)
+    spec = importlib.util.spec_from_file_location("handler", args['handler'])
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
     Handler = mod.Handler
     t = time.time()
-    dct = dictionary.Dictionary(args.dictionary)
+    dct = dictionary.Dictionary(args['dictionary'])
     logging.info(time.time()-t)
-    handler = type('Handler', (Handler, AbstractHandler), {'c': C})(dct, loop)
+    handler = type('Handler', (Handler, AbstractHandler), {'c': C})(dct, loop, args)
 
-    if args.udp:
+    if args['udp']:
         servers.append((await loop.create_datagram_endpoint(
             lambda: UDPProtocol(loop, handler), local_addr=('0.0.0.0', 1812))))
         servers.append((await loop.create_datagram_endpoint(
             lambda: UDPProtocol(loop, handler), local_addr=('0.0.0.0', 1813))))
 
-    if args.tcp:
+    if args['tcp']:
 
         server = await loop.create_server(lambda: TCPProtocol(loop, handler), '0.0.0.0', 1812)
         await server.start_serving()
@@ -47,18 +47,18 @@ async def main(args):
         await server.start_serving()
         servers.append(server)
 
-    if args.tls_generate:
+    if args['tls_generate']:
         import tlscert
         import socket
         c, k = tlscert.generate_selfsigned_cert(
                 socket.gethostname()
                 )
-        with open(args.tls_cert,'wb') as f:
+        with open(args['tls_cert'], 'wb') as f:
             f.write(c)
-        with open(args.tls_key,'wb') as f:
+        with open(args['tls_key'], 'wb') as f:
             f.write(k)
 
-    if args.tls:
+    if args['tls']:
 
         server_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
         server_context.check_hostname = False
@@ -66,12 +66,12 @@ async def main(args):
 
         try:
             server_context.load_cert_chain(
-                    args.tls_cert,
-                    args.tls_key)
+                    args['tls_cert'],
+                    args['tls_key'])
 
-        except FileNotFoundError:
+        except FileNotFoundError as e:
             logging.critical("Certificates not found")
-            return
+            raise e
         except Exception as e:
             raise e
 
@@ -112,6 +112,7 @@ if __name__ == "__main__":
     parser.add_argument("--tcp", action="store_true")
     parser.add_argument("--udp", action="store_true")
     parser.add_argument("--tls", action="store_true")
+    parser.add_argument("--eap", action="store_true")
     parser.add_argument("--tls-generate", action="store_true")
     parser.add_argument("--tls-cert", default=(pathlib.Path(__file__).parent / '..' /'certs' / 'ssl_cert.pem' ))
     parser.add_argument("--tls-key", default=(pathlib.Path(__file__).parent / '..' / 'certs' / 'ssl_key.pem') )
@@ -127,7 +128,7 @@ if __name__ == "__main__":
 
     uvloop.install()
     loop = asyncio.get_event_loop()
-    servers, handler = loop.run_until_complete(main(args))
+    servers, handler = loop.run_until_complete(main(vars(args)))
     if servers:
         try:
             loop.run_forever()

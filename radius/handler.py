@@ -1,11 +1,11 @@
 class AbstractHandler:
-    def __init__(self, dct, loop, *a, **kw):
+    def __init__(self, dct, loop, args, *a, **kw):
         super().__init__(*a, **kw)
         self.d = self.dict = self.dictionary = dct
         self.attributes = {}
         if dct:
             self.attributes = dct.attributes
-        self.ready = loop.create_task(self.on_init())
+        self.ready = loop.create_task(self.on_init(args))
 
     async def on_init(self):
         """

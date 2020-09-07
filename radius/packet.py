@@ -1,15 +1,15 @@
 import struct
-import constants as C
+from . import constants as C
 import hmac, hashlib
 import ipaddress
 import os
 import itertools
 from datetime import datetime
-import dictionary
+from . import dictionary
 import logging
 from collections import defaultdict
-import mschap.mschap as mschap
-import protocol
+from .mschap import mschap
+from . import protocol
 
 Identifiers = itertools.cycle(range(256))
 
@@ -238,9 +238,9 @@ class Packet:
                     logging.warning(f'Tags not supported')
                 if 'encrypt=1' in flags:
                     v = self.decript1(v)
-                if 'concat' in flags and len(self.__attr[key]) > 1:
-                    v = [bytearray().join(self.__attr[key])]
-                    self.__attr.reset(key, v)
+                if 'concat' in flags and len(self.__attrs[key]) > 1:
+                    v = [bytearray().join(self.__attrs[key])]
+                    self.__attrs.reset(key, v)
 
                 if typ in ['octets', 'ipaddr', 'ipv6addr', 'ether', 'ipv6prefix', 'ipv4prefix']:
                     v = bytes(v)
@@ -276,7 +276,7 @@ class Packet:
         elif isinstance(v, bytearray):
             return bytes(v)
         elif isinstance(v, int):
-            return struct.pack("!L",v)
+            return struct.pack("!L", v)
         elif isinstance(v, str):
             return v.encode('utf8')
         elif isinstance(v, ipaddress.IPv4Address):

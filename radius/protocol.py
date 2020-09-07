@@ -1,20 +1,8 @@
-import argparse
 import asyncio
-import gc
-import os.path
-import pathlib
-import socket
-import ssl
-import uvloop
-import importlib
-import constants as C
-from handler import AbstractHandler
-from packet import Packet
-import dictionary
-import logging
+from . import constants as C
+from .packet import Packet
 from cachetools import TTLCache
 from asyncache import cached
-
 
 def nas_cache_key(request, *args, **kwargs):
     return request.remote
@@ -48,7 +36,6 @@ class AbstractProtocol(asyncio.Protocol):
         if request.Code == C.AccessRequest:
             await self.handler.on_preauth(request)
             responce = request.reply()
-
             code = await self.handler.on_auth(request, responce)
             if code is True:
                 responce.Code = C.AccessAccept

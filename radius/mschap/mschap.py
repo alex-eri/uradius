@@ -1,4 +1,4 @@
-from . import des #!
+from . import des  # !
 import hashlib
 
 def generate_nt_response_mschap(challenge,password): #!
@@ -13,7 +13,7 @@ def generate_nt_response_mschap(challenge,password): #!
    }
     """
     password_hash=nt_password_hash(password)
-    return challenge_response(challenge,password_hash)
+    return challenge_response(challenge, password_hash)
 
 
 def generate_nt_response_mschap2(authenticator_challenge,peer_challenge,username,password):

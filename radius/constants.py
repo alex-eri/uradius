@@ -1,4 +1,3 @@
-
 AccessRequest = 1
 AccessAccept = 2
 AccessReject = 3
