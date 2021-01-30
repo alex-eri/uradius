@@ -48,7 +48,7 @@ async def main(args):
         servers.append(server)
 
     if args['tls_generate']:
-        import tlscert
+        from . import tlscert
         import socket
         c, k = tlscert.generate_selfsigned_cert(
                 socket.gethostname()
@@ -100,8 +100,7 @@ async def close(servers, handler):
             await server.wait_closed()
 
 
-if __name__ == "__main__":
-
+def run():
     print(pathlib.Path(__file__))
 
     parser = argparse.ArgumentParser()
@@ -135,3 +134,6 @@ if __name__ == "__main__":
         except KeyboardInterrupt:
             pass
     asyncio.run(close(servers, handler))
+
+if __name__ == "__main__":
+    run()
