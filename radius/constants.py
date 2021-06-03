@@ -101,7 +101,8 @@ CoovaChilliBandwidthMaxUp = (ChilliSpot, 4)
 CoovaChilliBandwidthMaxDown = (ChilliSpot, 5)
 
 
-
+ServiceTypeLogin =  1
+ServiceTypeFramed =  2
 
 WISPr = 14122
 WISPrLocationName = (WISPr,2)
@@ -149,3 +150,30 @@ TCServiceUnavailable =    15
 TCCallback      =         16
 TCUserError     =         17
 TCHostRequest   =         18
+
+#code
+Request = 1
+Success = 3
+Response = 2
+Failure = 4
+
+#type
+Identity = 1
+LegacyNak = 3
+MD5Challenge = 4
+
+PEAP = 25
+MSCHAPV2 = 26
+
+EAPTLS = 13
+EAPTTLS = 21
+EAP_TLS_MPPE_KEY_LEN  = 32
+
+PEAP_version = 0
+
+#mschap
+Challenge = 1
+Response = 2
+Success = 3
+Failure = 4
+ChangePassword = 5

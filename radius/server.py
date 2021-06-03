@@ -101,7 +101,7 @@ async def close(servers, handler):
 
 
 def run():
-    print(pathlib.Path(__file__))
+    #print(pathlib.Path(__file__))
 
     parser = argparse.ArgumentParser()
     parser.add_argument("handler")
@@ -125,7 +125,7 @@ def run():
 
     logging.basicConfig(level=level)
 
-    uvloop.install()
+    #uvloop.install()
     loop = asyncio.get_event_loop()
     servers, handler = loop.run_until_complete(main(vars(args)))
     if servers:

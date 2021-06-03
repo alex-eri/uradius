@@ -3,6 +3,8 @@ from . import constants as C
 from .packet import Packet
 from cachetools import TTLCache
 from asyncache import cached
+import logging
+logger = logging.getLogger('protocol')
 
 def nas_cache_key(request, *args, **kwargs):
     return request.remote
@@ -18,23 +20,24 @@ class AbstractProtocol(asyncio.Protocol):
         super().__init__(*a, **kw)
 
     def connection_made(self, transport):
+        logger.debug('connection_made')
         self.transport = transport
 
     def connection_lost(self, exc):
         self.transport = None
 
     async def request(self, data, addr):
+        logger.debug(addr)
         request = Packet(data=data, remote=addr, dictionary=self.handler.d, cls=type(self))
+        request.parse()
         nas = await nas_cached(self.handler.on_nas)(request)
         request.nas = nas
         if not nas:
             return
-
         request.secret = nas['secret']
         request.check()
 
         if request.Code == C.AccessRequest:
-            await self.handler.on_preauth(request)
             responce = request.reply()
             code = await self.handler.on_auth(request, responce)
             if code is True:
@@ -43,13 +46,11 @@ class AbstractProtocol(asyncio.Protocol):
                 responce.Code = C.AccessReject
             elif isinstance(code, int):
                 responce.Code = code
-
             if responce.Code == C.AccessAccept:
                 await self.handler.on_accept(request, responce)
             elif responce.Code == C.AccessReject:
                 await self.handler.on_reject(request, responce)
         elif request.Code == C.AccountingRequest:
-            await self.handler.on_preacct(request)
             responce = request.reply(C.AccountingResponse)
             await self.handler.on_acct(request, responce)
 
