@@ -21,5 +21,5 @@ setup(
         sources,
         compiler_directives={'language_level' : "3"}
     ),
-    'console_scripts': ['uradius = radius.server:run']
+    console_scripts = ['uradius = radius.server:run']
 )
