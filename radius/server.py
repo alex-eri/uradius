@@ -45,7 +45,14 @@ async def main(args):
     t = time.time()
     dct = dictionary.Dictionary(args['dictionary'])
     logging.info(time.time()-t)
-    handler = type('Handler', (Handler, AbstractHandler), {'c': C})(dct, loop, args)
+
+    handler_bases =  [Handler, AbstractHandler]
+
+    if args['eap']:
+        from .eap.session import EAP
+        handler_bases.append(EAP)
+
+    handler = type('Handler', handler_bases, {'c': C})(dct, loop, args)
 
     if args['udp']:
         servers.append((await loop.create_datagram_endpoint(

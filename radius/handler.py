@@ -1,5 +1,4 @@
 from .constants import *
-from .eap.session import EAP
 
 from .dictionary import Attr
 
@@ -7,7 +6,7 @@ import logging
 logger = logging.getLogger('handler')
 
 
-class InternalHandler(EAP):
+class InternalHandler:
     def __init__(self, dct, loop, args, *a, **kw):
         super().__init__(dct, loop, args, *a, **kw)
         self.d = self.dict = self.dictionary = dct
@@ -65,6 +64,8 @@ class InternalHandler(EAP):
 
 class AbstractHandler(InternalHandler):
 
+    async def on_eap(self, request, response):
+        raise NotImplementedError
 
     async def on_init(self):
         """
