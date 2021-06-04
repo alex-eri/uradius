@@ -73,7 +73,9 @@ class TCPProtocol(AbstractProtocol):
 class RadsecProtocol(TCPProtocol):
     "TCP wrapped into TLS, secret always 'radsec'"
     "TODO cert check"
-    pass
+    async def responce(self, request, responce):
+        responce.secret = b'radsec'
+        super().responce(request, responce)
 
 
 class UDPProtocol(AbstractProtocol):

@@ -174,6 +174,6 @@ class Dictionary:
                     logging.critical(e)
                     raise e
 
-        logging.debug(f + ' loaded')
+        logging.debug(str(f) + ' loaded')
 
 

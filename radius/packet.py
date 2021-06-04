@@ -9,10 +9,8 @@ from . import dictionary
 import logging
 from collections import defaultdict
 from .mschap import mschap
-from . import protocol
 
 Identifiers = itertools.cycle(range(256))
-
 
 class Multidict(defaultdict):
     def __init__(self):
@@ -87,10 +85,7 @@ class Packet:
             data[2] = 0
             data[1] = self.Identifier
             data[0] = code
-            if self.cls == protocol.RadsecProtocol:
-                secret = b'radsec'
-            else:
-                secret=self.secret
+
             self.__reply = Packet(
                 data=data,
                 secret=secret,
