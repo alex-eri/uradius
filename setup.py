@@ -9,13 +9,12 @@ import os, sys
 from distutils.core import setup
 #from distutils.command.build_ext import build_ext
 
-def cythonize_(*a,**kw):
-    from subprocess import call
-    call([sys.executable, '-m' 'radius', '--tls-generate'], cwd='.')
-    cythonize(*a,**kw)
+from datetime import datetime
 
 setup(
     name="URadius",
+    version="1." + datetime.now().strftime('%Y.%m%d'),
+
     cmdclass={
         'build_ext': build_ext
     },
