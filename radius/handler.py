@@ -19,8 +19,7 @@ class InternalHandler:
         success = False
 
         if request['Service-Type'] == ServiceTypeLogin:
-            async with self.pool.acquire() as conn:
-                c = await self.on_login(request, response, request['user-name'])
+            c = await self.on_login(request, response, request['user-name'])
             if c:
                 success = request.check_password(c['password'], response)
             if success and c.get('group'):
@@ -66,7 +65,7 @@ class AbstractHandler(InternalHandler):
     async def on_eap(self, request, response):
         raise NotImplementedError
 
-    async def on_init(self):
+    async def on_init(self, args):
         """
         After creating instance of handler. Connect to database here
         """
