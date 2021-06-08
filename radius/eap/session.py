@@ -261,7 +261,7 @@ class EAP_Session:
 
 class EAP:
     def __init__(self, dct, loop, args,  *a, **kw):
-        super().__init__( *a, **kw)
+        super().__init__(dct, loop, args, *a, **kw)
         context = ssl.SSLContext(ssl.PROTOCOL_TLS)
         context.check_hostname = False
         context.verify_mode = ssl.CERT_NONE

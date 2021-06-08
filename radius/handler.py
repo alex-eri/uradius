@@ -8,7 +8,6 @@ logger = logging.getLogger('handler')
 
 class InternalHandler:
     def __init__(self, dct, loop, args, *a, **kw):
-        super().__init__(dct, loop, args, *a, **kw)
         self.d = self.dict = self.dictionary = dct
         self.attributes = {}
         if dct:
