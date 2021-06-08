@@ -119,3 +119,9 @@ class AbstractHandler(InternalHandler):
             print(k.name, v)
         return
 
+    async def on_reply(self, request, response, send_coa):
+        return
+        if request.Code == AccountingRequest:
+            coa_req = request.coa(CoARequest)
+            coa_req['X-Ascend-Data-Rate'] = 1 << 20
+            coa_res = await send_coa(coa_req)

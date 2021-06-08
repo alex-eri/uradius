@@ -39,12 +39,13 @@ class Multidict(defaultdict):
 
 
 class Packet:
-    def __init__(self, data=b'', remote=None, secret=None, dictionary=None, cls=None):
-        self.cls = cls
+    def __init__(self, data=b'', remote=None, secret=None, dictionary=None, protocol=None):
+        self.protocol = protocol
         self.d = dictionary
         self.remote = remote
         self.payload = {}
         self.nas = None
+        self.__secret
         self.secret = secret
         if data:
             self.__data = data
@@ -54,14 +55,27 @@ class Packet:
         self.__attrs = Multidict()
         self.__ma_cursor = None
         self.__reply = None
-        self.__secret
+
+    def coa(self, code):
+        data = bytearray(20)
+        data[3] = 0
+        data[2] = 0
+        data[1] = self.protocol.coa_counter
+        data[0] = code
+        return Packet(
+                data=data,
+                secret=self.secret,
+                dictionary=self.d,
+                remote=self.remote,
+                protocol=self.protocol
+                )
 
     @property
     def secret(self):
         return self.__secret
 
     @secret.setter
-    def secret(self,v):
+    def secret(self, v):
         if type(v) == str:
             v = v.encode()
         self.__secret = v

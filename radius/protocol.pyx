@@ -17,7 +17,15 @@ class AbstractProtocol(asyncio.Protocol):
     def __init__(self, loop, handler, *a, **kw):
         self.loop = loop
         self.handler = handler
+        self.__coa_counter = 0
+        self.coas = {}
         super().__init__(*a, **kw)
+
+    @property
+    def coa_counter(self):
+        self.__coa_counter += 1
+        self.__coa_counter %= 256
+        return self.__coa_counter
 
     def connection_made(self, transport):
         logger.debug('connection_made')
@@ -28,7 +36,12 @@ class AbstractProtocol(asyncio.Protocol):
 
     async def request(self, data, addr):
         logger.debug(addr)
-        request = Packet(data=data, remote=addr, dictionary=self.handler.d, cls=type(self))
+        request = Packet(
+            data=data,
+            remote=addr,
+            dictionary=self.handler.d,
+            protocol=self,
+            )
         request.parse()
         nas = await nas_cached(self.handler.on_nas)(request)
         request.nas = nas
@@ -53,11 +66,24 @@ class AbstractProtocol(asyncio.Protocol):
         elif request.Code == C.AccountingRequest:
             responce = request.reply(C.AccountingResponse)
             await self.handler.on_acct(request, responce)
+        elif request.Code in [DisconnectACK, DisconnectNAK, CoAACK, CoANAK]:
+            self.coas[(request.Identifier, request.remote)].set_result(request)
 
         await self.responce(request, responce)
 
     async def responce(self, request, responce):
         self.data_send(responce.build(), request.remote)
+
+        async def send_coa(coa, timeout=3):
+            fut = self.coas[(coa.Identifier, request.remote)] = asyncio.Future()
+            self.data_send(coa.build(), request.remote)
+            try:
+                res = await asyncio.wait_for(fut, timeout=timeout)
+            finally:
+                del self.coas[(coa.Identifier, request.remote)]
+            return res
+
+        await self.handler.on_reply(request, responce, send_coa)
 
 
 class TCPProtocol(AbstractProtocol):
