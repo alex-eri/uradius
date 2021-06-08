@@ -18,23 +18,23 @@ class InternalHandler:
     async def on_auth(self, request, response):
         success = False
 
-        if request['Service-Type'] == ServiceTypeLogin:
-            c = await self.on_login(request, response, request['user-name'])
-            if c:
-                success = request.check_password(c['password'], response)
-            if success and c.get('group'):
-                response['Mikrotik.Mikrotik-Group'] = c.get('group')
-            return success
+        # if request['Service-Type'] == ServiceTypeLogin:
+        #     c = await self.on_login(request, response, request['user-name'])
+        #     if c:
+        #         success = request.check_password(c['password'], response)
+        #     if success and c.get('group'):
+        #         response['Mikrotik.Mikrotik-Group'] = c.get('group')
+        #     return success
 
-        elif request['Service-Type'] == ServiceTypeFramed or request['Service-Type'] is None:
-
+        # elif request['Service-Type'] == ServiceTypeFramed or request['Service-Type'] is None:
+        if True:
             if request['EAP-Message']:
                 success = await self.on_eap(request, response)
                 if success != AccessAccept:
                     return success
 
-            c = await self.on_framed(request, response, request['user-name'])
-            if c and success != AccessAccept:
+            success, c = await self.on_framed(request, response, request['user-name'])
+            if c.get('password'):
                 success = request.check_password(c['password'], response)
 
             if success:
@@ -43,16 +43,19 @@ class InternalHandler:
                     response['Framed-IP-Netmask'] = c['ip'].netmask
                 if c.get('bandwidth'):
                     rate = c["bandwidth"]
-                    if request.nas['type'] == "mikrotik":
-                        response['Mikrotik.Mikrotik-Rate-Limit'] = f'{rate}M {rate*5}M {rate*1.5}M 10'
+                    if request.nas['type'] == "mikrotik" and rate >= 1:
+                        bust, to = int(rate*5), int(rate*1.5)
+                        rate = int(rate)
+                        response['Mikrotik.Mikrotik-Rate-Limit'] = f'{rate}M {bust}M {to}M 10'
                     else:
+                        rate = int(rate)
                         response['X-Ascend-Data-Rate'] = rate << 20
                 if c.get('ippool'):
                     response['Framed-Pool'] = c['ippool']
                 if c.get('routes'):
                     response['Framed-Route'] = c['routes']
 
-                for k,v in c:
+                for k,v in c.items():
                     if isinstance(k, Attr):
                         response[k] = v
 
@@ -89,6 +92,8 @@ class AbstractHandler(InternalHandler):
         """
         return password, ip/mask, routes, ippool
         """
+        for k,v in request.items():
+            print(k,v)
         raise NotImplementedError
 
 
@@ -96,6 +101,8 @@ class AbstractHandler(InternalHandler):
         """
         return password, group
         """
+        for k,v in request.items():
+            print(k,v)
         raise NotImplementedError
 
 
@@ -103,10 +110,14 @@ class AbstractHandler(InternalHandler):
         """
         Acc
         """
+        for k,v in request.items():
+            print(k,v)
         raise NotImplementedError
 
 
     async def on_reject(self , request, response):
-        raise NotImplementedError
+        return
+
     async def on_accept(self , request, response):
-        raise NotImplementedError
+        return
+
