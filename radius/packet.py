@@ -88,7 +88,7 @@ class Packet:
 
             self.__reply = Packet(
                 data=data,
-                secret=secret,
+                secret=self.secret,
                 dictionary=self.d
                 )
             if self.__ma_cursor:
