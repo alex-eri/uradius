@@ -71,8 +71,8 @@ def freeradint(i):
 
 class Attr:
     def __eq__(self, other):
-        if type(other) == str:
-            self.name == other
+        # if type(other) == str:
+        #     self.name == other
         return self.value == other
 
     def __hash__(self):

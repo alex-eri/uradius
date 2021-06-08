@@ -5,4 +5,6 @@ $INCLUDE dictionary.rfc2866
 $INCLUDE dictionary.chillispot
 $INCLUDE dictionary.mikrotik
 $INCLUDE dictionary.rfc2869
+$INCLUDE dictionary.wispr
 $INCLUDE dictionary.ascend.illegal
+
