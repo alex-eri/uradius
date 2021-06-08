@@ -13,7 +13,7 @@ from datetime import datetime
 
 setup(
     name="URadius",
-    version="1." + datetime.now().strftime('%Y.%m%d'),
+    version="1." + datetime.now().strftime('%Y.%m.%d'),
 
     install_requires=[
           'sslkeylog', 'uvloop', 'pycrypto', 'aenum', 'asyncache'
