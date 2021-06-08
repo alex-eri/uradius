@@ -52,7 +52,7 @@ async def main(args):
         from .eap.session import EAP
         handler_bases.append(EAP)
 
-    handler = type('Handler', handler_bases, {'c': C})(dct, loop, args)
+    handler = type('Handler', tuple(handler_bases), {'c': C})(dct, loop, args)
 
     if args['udp']:
         servers.append((await loop.create_datagram_endpoint(
