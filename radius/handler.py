@@ -79,7 +79,7 @@ class AbstractHandler(InternalHandler):
         """
         if secret for NAS not cached, return secret
         """
-        raise NotImplementedError
+        raise NotImplementedError('async def on_nas(self, request)')
 
     async def on_close(self):
         """
@@ -94,7 +94,7 @@ class AbstractHandler(InternalHandler):
         """
         for k,v in request.items():
             print(k,v)
-        raise NotImplementedError
+        raise NotImplementedError('async def on_framed(self , request, response, username)')
 
 
     async def on_login(self , request, response, username):
@@ -112,7 +112,7 @@ class AbstractHandler(InternalHandler):
         """
         for k,v in request.items():
             print(k,v)
-        raise NotImplementedError
+        raise NotImplementedError('async def on_acct(self , request, response)')
 
 
     async def on_reject(self , request, response):
