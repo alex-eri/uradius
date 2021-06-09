@@ -72,7 +72,7 @@ def freeradint(i):
 class Attr:
     def __eq__(self, other):
         if type(other) == str:
-            return self.name == other
+            return self.name == other.upper()
         return self.value == other
 
     def __hash__(self):

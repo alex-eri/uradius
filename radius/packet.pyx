@@ -44,8 +44,8 @@ class Packet:
         self.d = dictionary
         self.remote = remote
         self.payload = {}
-        self.nas = None
-        self.__secret
+        self.nas = {}
+        self.__secret = ''
         self.secret = secret
         if data:
             self.__data = data
