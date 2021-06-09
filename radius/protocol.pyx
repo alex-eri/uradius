@@ -66,7 +66,7 @@ class AbstractProtocol(asyncio.Protocol):
         elif request.Code == C.AccountingRequest:
             responce = request.reply(C.AccountingResponse)
             await self.handler.on_acct(request, responce)
-        elif request.Code in [DisconnectACK, DisconnectNAK, CoAACK, CoANAK]:
+        elif request.Code in [C.DisconnectACK, C.DisconnectNAK, C.CoAACK, C.CoANAK]:
             self.coas[(request.Identifier, request.remote)].set_result(request)
 
         await self.responce(request, responce)
