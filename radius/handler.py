@@ -26,6 +26,8 @@ class InternalHandler:
         success, c = await self.on_framed(request, response, request['user-name'])
         if success != AccessReject and c.get('password'):
             success = request.check_password(c['password'], response)
+            if not success:
+                response['Reply-Message'] = 'bad password'
 
         if success:
             if c.get('ip'):
