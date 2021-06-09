@@ -24,7 +24,7 @@ class InternalHandler:
                 return success
 
         success, c = await self.on_framed(request, response, request['user-name'])
-        if c.get('password'):
+        if success != AccessReject and c.get('password'):
             success = request.check_password(c['password'], response)
 
         if success:
