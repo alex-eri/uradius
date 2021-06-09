@@ -44,6 +44,8 @@ class InternalHandler:
                 response['Framed-Pool'] = c['ippool']
             if c.get('routes'):
                 response['Framed-Route'] = c['routes']
+            if c.get('timeout'):
+                response['Session-Timeout'] = c['timeout']
 
             for k,v in c.items():
                 if isinstance(k, Attr):

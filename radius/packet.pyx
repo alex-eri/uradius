@@ -290,6 +290,8 @@ class Packet:
             return v.encode('utf8')
         elif isinstance(v, ipaddress.IPv4Address):
             return v.packed
+        elif isinstance(v, dictionary.Value):
+            return v.value
 
     def build(self):
 

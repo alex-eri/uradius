@@ -28,6 +28,14 @@ class Enum(aenum.Enum):
         return cls(value)
 
 
+
+class Value:
+    def __eq__(self, value):
+        return self.value == value
+
+    def __hash__(self):
+        return self.value.__hash__()
+
 class Attribute:
     name = None
     type = None
@@ -70,6 +78,10 @@ def freeradint(i):
 
 
 class Attr:
+    def __init__(self,*a,**kw):
+        self.choices = Enum('Value', {}, type=Value)
+        super().__init__(*a,**kw)
+
     def __eq__(self, other):
         if type(other) == str:
             return self.name == other.upper()
@@ -83,21 +95,12 @@ class Attr:
         return self.value.type
 
 
-class Value:
-    def __eq__(self, value):
-        return self.value == value
-
-    def __hash__(self):
-        return self.value.__hash__()
-
-
-def values_factory():
-    return Enum('Value', {}, type=Value)
-
-
 class Dictionary:
+    def __getitem__(self, name):
+        return self.attributes[name]
+
     def __init__(self, f):
-        self.values = defaultdict(values_factory)
+
         self.types = {}
         self.vendors = {}
         self.attributes = Enum('Attr', {}, type=Attr)
@@ -164,10 +167,11 @@ class Dictionary:
                                 except:
                                     logging.warning(f'VALUE {n} before ATTRIBUTE {att} not loaded')
 
-                            if isinstance(att, Attribute):
+                            if isinstance(att, Attr):
                                 try:
-                                    att.value.values[n] = freeradint(line[3])
-                                except:
+                                    aenum.extend_enum(att.choices, n, freeradint(line[3]))
+                                except Exception as e:
+                                    logging.error(e)
                                     logging.warning(f'Values only for integer {att} suppotted. {line[3]}')
                 except Exception as e:
                     logging.info(line)
