@@ -419,14 +419,14 @@ class Packet:
         return self.__attrs[k][-1].decode(encoding)
 
     def as_byte(self, k):
-        return struct.unpack('!B', self.__attrs[k])
+        return struct.unpack('!B', self.__attrs[k][-1])[0]
 
     def as_uint16(self, k):
-        return struct.unpack('!H', self.__attrs[k])
+        return struct.unpack('!H', self.__attrs[k][-1])[0]
 
     def as_uint32(self, k):
-        return struct.unpack('!L', self.__attrs[k])
+        return struct.unpack('!L', self.__attrs[k][-1])[0]
 
     def as_uint64(self, k):
-        return struct.unpack('!Q', self.__attrs[k])
+        return struct.unpack('!Q', self.__attrs[k][-1])[0]
 
