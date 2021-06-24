@@ -1,5 +1,5 @@
+import asyncio
 from .constants import *
-
 from .dictionary import Attr
 
 import logging
@@ -7,13 +7,13 @@ logger = logging.getLogger('handler')
 
 
 class InternalHandler:
-    def __init__(self, dct, loop, args, *a, **kw):
+    def __init__(self, dct, args, *a, **kw):
+        loop = asyncio.get_running_loop()
         self.d = self.dict = self.dictionary = dct
         self.attributes = {}
         if dct:
             self.attributes = dct.attributes
         self.ready = loop.create_task(self.on_init(args))
-
 
     async def on_auth(self, request, response):
         success = False

@@ -126,6 +126,12 @@ class Packet:
     def RequestAuthenticator(self):
         return self.__data[4:20]
 
+    def get(self, key, default=None):
+        if key in self.__attrs.keys():
+            return self[key]
+        else:
+            return default
+
     def __getitem__(self, key):
         if type(key) == str:
             key = key.upper()
@@ -413,14 +419,14 @@ class Packet:
         return self.__attrs[k][-1].decode(encoding)
 
     def as_byte(self, k):
-        return struct.unpack('!B', self.self.__attrs[k])
+        return struct.unpack('!B', self.__attrs[k])
 
     def as_uint16(self, k):
-        return struct.unpack('!H', self.self.__attrs[k])
+        return struct.unpack('!H', self.__attrs[k])
 
     def as_uint32(self, k):
-        return struct.unpack('!L', self.self.__attrs[k])
+        return struct.unpack('!L', self.__attrs[k])
 
     def as_uint64(self, k):
-        return struct.unpack('!Q', self.self.__attrs[k])
+        return struct.unpack('!Q', self.__attrs[k])
 

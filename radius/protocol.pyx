@@ -14,12 +14,17 @@ nas_cached = cached(nas_cache, key=nas_cache_key)
 
 
 class AbstractProtocol(asyncio.Protocol):
-    def __init__(self, loop, handler, *a, **kw):
-        self.loop = loop
+    def __init__(self, handler, *a, **kw):
+        self.loop = asyncio.get_running_loop()
         self.handler = handler
         self.__coa_counter = 0
         self.coas = {}
         super().__init__(*a, **kw)
+
+
+    async def wait_closed(self):
+        await self.handler.on_close()
+        return await super().wait_closed()
 
     @property
     def coa_counter(self):

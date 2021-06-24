@@ -15,6 +15,43 @@ from .handler import AbstractHandler
 from .protocol import UDPProtocol, TCPProtocol, RadsecProtocol
 
 import time
+import multiprocessing
+import socket
+
+def stream_process(protocol_factory, sock, ssl=None):
+    loop = asyncio.new_event_loop()
+    server = loop.run_until_complete(
+        loop.create_server(protocol_factory, sock=sock, ssl=ssl)
+        )
+    loop.run_forever()
+    server.close()
+    loop.run_until_complete(server.wait_closed())
+    loop.run_until_complete(server.get_protocol().wait_closed())
+    loop.close()
+
+
+def stream_process_pool(protocol_factory, port, ssl=None, n=4):
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.bind(('', port))
+    processes = [ multiprocessing.Process(target=stream_process, args=(protocol_factory, sock, ssl), name=f"tcp {port} #{i}") for i in range(n) ]
+    return processes
+
+
+def udp_process(protocol_factory, sock):
+    loop = asyncio.new_event_loop()
+    transport, protocol = loop.run_until_complete(
+        loop.create_datagram_endpoint(protocol_factory, sock=sock)
+        )
+    loop.run_forever()
+    transport.close()
+    loop.run_until_complete(protocol.wait_closed())
+    loop.close()
+
+def udp_process_pool(protocol_factory, port, n=4):
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    sock.bind(('', port))
+    processes = [ multiprocessing.Process(target=udp_process, args=(protocol_factory, sock), name=f"udp {port} #{i}") for i in range(n) ]
+    return processes
 
 
 async def main(args):
@@ -35,7 +72,6 @@ async def main(args):
     servers = []
 
     #Handler = importlib.import_module(handlerclassname).Handler
-
     spec = importlib.util.spec_from_file_location("handler", args['handler'])
     if not spec:
         exit(1)
@@ -52,29 +88,24 @@ async def main(args):
         from .eap.session import EAP
         handler_bases.append(EAP)
 
-    handler = type('Handler', tuple(handler_bases), {'c': C})(dct, loop, args)
+    handler = lambda : type('Handler', tuple(handler_bases), {'c': C})(dct, args)
 
     if args['udp']:
-        servers.append((await loop.create_datagram_endpoint(
-            lambda: UDPProtocol(loop, handler), local_addr=('0.0.0.0', 1812))))
-        servers.append((await loop.create_datagram_endpoint(
-            lambda: UDPProtocol(loop, handler), local_addr=('0.0.0.0', 1813))))
+        if args['eap']:
+            udp_workers = 1
+        else:
+            udp_workers = args['workers']
+        servers.extend(udp_process_pool(lambda: UDPProtocol(handler()), 1812, n=udp_workers))
+        servers.extend(udp_process_pool(lambda: UDPProtocol(handler()), 1813, n=udp_workers))
 
     if args['tcp']:
-
-        server = await loop.create_server(lambda: TCPProtocol(loop, handler), '0.0.0.0', 1812)
-        await server.start_serving()
-        servers.append(server)
-        server = await loop.create_server(lambda: TCPProtocol(loop, handler), '0.0.0.0', 1813)
-        await server.start_serving()
-        servers.append(server)
-
+        servers.extend(stream_process_pool(lambda: TCPProtocol(handler()), 1812, n=args['workers']))
+        servers.extend(stream_process_pool(lambda: TCPProtocol(handler()), 1813, n=args['workers']))
 
     if args['tls']:
-
         server_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
         server_context.check_hostname = False
-        server_context.verify_mode = ssl.CERT_NONE
+        server_context.verify_mode = ssl.CERT_OPTIONAL
 
         try:
             server_context.load_cert_chain(
@@ -87,29 +118,16 @@ async def main(args):
         except Exception as e:
             raise e
 
-        server = await loop.create_server(lambda: RadsecProtocol(loop, handler), '0.0.0.0', 2083, ssl=server_context)
-        await server.start_serving()
-        servers.append(server)
+        servers.extend(stream_process_pool(lambda: RadsecProtocol(handler()), 2083, ssl=server_context, n=args['workers']))
+        servers.extend(stream_process_pool(lambda: RadsecProtocol(handler()), 2084, ssl=server_context, n=args['workers']))
+
+    return servers
 
 
-    await handler.ready
-    logging.info('ready')
-
-    return servers, handler
-
-
-async def close(servers, handler):
-    for server in servers:
-        if type(server) == tuple:
-            server[0].close()
-        else:
-            server.close()
-    await handler.on_close()
-    for server in servers:
-        if type(server) == tuple:
-            pass
-        else:
-            await server.wait_closed()
+async def close(servers):
+    for server in servers: server.terminate()
+    for server in servers: server.join()
+    for server in servers: server.close()
 
 
 def run():
@@ -120,6 +138,7 @@ def run():
     parser.add_argument("--dictionary", default=(pathlib.Path(__file__).parent / 'dictionary' / 'dictionary'))
     parser.add_argument("--debug", action="store_true")
     parser.add_argument("--verbosity", help="output verbosity", choices='DEBUG INFO WARNING ERROR FATAL'.split())
+    parser.add_argument("--workers", type=int, default=1)
     parser.add_argument("--tcp", action="store_true")
     parser.add_argument("--udp", action="store_true")
     parser.add_argument("--tls", action="store_true")
@@ -139,13 +158,16 @@ def run():
 
     #uvloop.install()
     loop = asyncio.get_event_loop()
-    servers, handler = loop.run_until_complete(main(vars(args)))
+    servers = loop.run_until_complete(main(vars(args)))
+
+    for server in servers: server.start()
+
     if servers:
         try:
             loop.run_forever()
         except KeyboardInterrupt:
             pass
-    asyncio.run(close(servers, handler))
+    asyncio.run(close(servers))
 
 if __name__ == "__main__":
     run()
