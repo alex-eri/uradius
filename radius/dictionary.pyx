@@ -81,6 +81,9 @@ class Attr:
     def __getitem__(self, name):
         return self.choices[name.upper()]
 
+    def __call__(self, name):
+        return self.choices[name.upper()]
+
     def __init__(self,*a,**kw):
         self.choices = Enum('Value', {}, type=Value)
         super().__init__(*a,**kw)

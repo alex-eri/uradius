@@ -48,12 +48,19 @@ class AbstractProtocol(asyncio.Protocol):
             protocol=self,
             )
         request.parse()
-        nas = await nas_cached(self.handler.on_nas)(request)
-        request.nas = nas
+        nas = None
+        try:
+            nas = await nas_cached(self.handler.on_nas)(request)
+            request.nas = nas
+        except Exception as e:
+            logger.error(repr(e))
         if not nas:
             return
         request.secret = nas['secret']
-        request.check()
+        try:
+            request.check()
+        except Exception as e:
+            logger.error(repr(e))
 
         if request.Code == C.AccessRequest:
             responce = request.reply()

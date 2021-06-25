@@ -126,13 +126,13 @@ class Packet:
     def RequestAuthenticator(self):
         return self.__data[4:20]
 
-    def get(self, key, default=None):
+    def get(self, key, default=None, index=-1):
         if key in self.__attrs.keys():
-            return self[key]
+            return self.__getitem__(key, index=index)
         else:
             return default
 
-    def __getitem__(self, key):
+    def __getitem__(self, key, index=-1):
         if type(key) == str:
             key = key.upper()
         if not self.__attrs and self.__data[2]:
@@ -164,7 +164,7 @@ class Packet:
         if self.__ma_cursor:
             d = self.get_message_authenticator(self.__ma_cursor)
             if d != self.__attrs[C.MessageAuthenticator][0]:
-                raise Exception('MessageAuthenticator not valid')
+                raise Exception('MessageAuthenticator not valid - check secret')
 
     def get_message_authenticator(self, cursor):
         m = hmac.HMAC(key=self.secret, digestmod=hashlib.md5)
