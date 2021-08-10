@@ -54,8 +54,8 @@ def udp_process_pool(protocol_factory, port, n=4):
     return processes
 
 
-async def main(args):
-    if args['tls_generate']:
+async def main(**args):
+    if args.get('tls_generate'):
         from . import tlscert
         import socket
         c, k = tlscert.generate_selfsigned_cert(
@@ -71,15 +71,20 @@ async def main(args):
     loop = asyncio.get_running_loop()
     servers = []
 
-    #Handler = importlib.import_module(handlerclassname).Handler
-    spec = importlib.util.spec_from_file_location("handler", args['handler'])
-    if not spec:
-        exit(1)
-    mod = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(mod)
-    Handler = mod.Handler
+    if args.get('handler'):
+        spec = importlib.util.spec_from_file_location("handler", args['handler'])
+        if not spec:
+            exit(1)
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        Handler = mod.Handler
+    elif args.get('handler_class'):
+        Handler = args.get('handler_class')
+    else:
+        raise Exception('handler or handler_class required')
+        
     t = time.time()
-    dct = dictionary.Dictionary(args['dictionary'])
+    dct = dictionary.Dictionary(args.get('dictionary', pathlib.Path(__file__).parent / 'dictionary' / 'dictionary'))
     logging.info(time.time()-t)
 
     handler_bases =  [Handler, AbstractHandler]
@@ -90,19 +95,19 @@ async def main(args):
 
     handler = lambda : type('Handler', tuple(handler_bases), {'c': C})(dct, args)
 
-    if args['udp']:
-        if args['eap']:
+    if args.get('udp'):
+        if args.get('eap'):
             udp_workers = 1
         else:
             udp_workers = args['workers']
         servers.extend(udp_process_pool(lambda: UDPProtocol(handler()), 1812, n=udp_workers))
         servers.extend(udp_process_pool(lambda: UDPProtocol(handler()), 1813, n=udp_workers))
 
-    if args['tcp']:
+    if args.get('tcp'):
         servers.extend(stream_process_pool(lambda: TCPProtocol(handler()), 1812, n=args['workers']))
         servers.extend(stream_process_pool(lambda: TCPProtocol(handler()), 1813, n=args['workers']))
 
-    if args['tls']:
+    if args.get('tls'):
         server_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
         server_context.check_hostname = False
         server_context.verify_mode = ssl.CERT_OPTIONAL
@@ -137,6 +142,7 @@ def run():
     parser.add_argument("handler", nargs='?')
     parser.add_argument("--dictionary", default=(pathlib.Path(__file__).parent / 'dictionary' / 'dictionary'))
     parser.add_argument("--debug", action="store_true")
+    parser.add_argument("--journald", action="store_true")
     parser.add_argument("--verbosity", help="output verbosity", choices='DEBUG INFO WARNING ERROR FATAL'.split())
     parser.add_argument("--workers", type=int, default=1)
     parser.add_argument("--tcp", action="store_true")
@@ -153,12 +159,15 @@ def run():
         level = logging.DEBUG
     if args.verbosity:
         level = getattr(logging, args.verbosity)
-
-    logging.basicConfig(level=level)
+    if args.journald:
+        from systemd import journal
+        logging.basicConfig(level=level, handlers=[journal.JournalHandler(SYSLOG_IDENTIFIER='uradius')])
+    else:
+        logging.basicConfig(level=level)
 
     #uvloop.install()
     loop = asyncio.get_event_loop()
-    servers = loop.run_until_complete(main(vars(args)))
+    servers = loop.run_until_complete(main(**vars(args)))
 
     for server in servers: server.start()
 
