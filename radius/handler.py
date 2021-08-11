@@ -36,7 +36,7 @@ class InternalHandler:
             if c.get('bandwidth'):
                 rate = c["bandwidth"]
                 if request.nas['type'] == "mikrotik" and rate >= 1:
-                    bust, to = int(rate*5), int(rate*1.5)
+                    bust, to = int(rate*3), int(rate*1)
                     rate = int(rate)
                     response['Mikrotik.Mikrotik-Rate-Limit'] = f'{rate}M {bust}M {to}M 10'
                 else:
