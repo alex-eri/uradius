@@ -56,6 +56,10 @@ def udp_process_pool(protocol_factory, port, n=4):
 
 async def main(**args):
     if args.get('tls_generate'):
+         import os.path
+         args['tls_regenerate'] = not (os.path.isfile(args['tls_cert']) and  os.path.isfile(args['tls_key']))
+        
+    if args.get('tls_regenerate'):
         from . import tlscert
         import socket
         c, k = tlscert.generate_selfsigned_cert(
@@ -149,6 +153,7 @@ def run():
     parser.add_argument("--udp", action="store_true")
     parser.add_argument("--tls", action="store_true")
     parser.add_argument("--eap", action="store_true")
+    parser.add_argument("--tls-regenerate", action="store_true")
     parser.add_argument("--tls-generate", action="store_true")
     parser.add_argument("--tls-cert", default=(pathlib.Path(__file__).parent / 'certs' / 'ssl_cert.pem' ))
     parser.add_argument("--tls-key", default=(pathlib.Path(__file__).parent / 'certs' / 'ssl_key.pem') )
