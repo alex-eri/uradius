@@ -70,8 +70,6 @@ class AbstractHandler(InternalHandler):
         """
         After creating instance of handler. Connect to database here
         """
-        for k,v in args.items():
-            print(k, v)
         raise NotImplementedError('async def on_init(self, args)')
 
 
@@ -79,8 +77,6 @@ class AbstractHandler(InternalHandler):
         """
         if secret for NAS not cached, return secret
         """
-        for k,v in request.items():
-            print(k.name, v)
         raise NotImplementedError('async def on_nas(self, request)')
 
     async def on_close(self):
@@ -94,8 +90,6 @@ class AbstractHandler(InternalHandler):
         """
         return password, ip/mask, routes, ippool
         """
-        for k,v in request.items():
-            print(k.name, v)
         raise NotImplementedError('async def on_framed(self , request, response, username)')
 
 
@@ -103,8 +97,7 @@ class AbstractHandler(InternalHandler):
         """
         return password, group
         """
-        for k,v in request.items():
-            print(k.name, v)
+
         raise NotImplementedError
 
 
@@ -112,19 +105,14 @@ class AbstractHandler(InternalHandler):
         """
         Acc
         """
-        for k,v in request.items():
-            print(k.name, v)
+
         raise NotImplementedError('async def on_acct(self , request, response)')
 
 
     async def on_reject(self , request, response):
-        for k,v in response.items():
-            print(k.name, v)
         return
 
     async def on_accept(self , request, response):
-        for k,v in response.items():
-            print(k.name, v)
         return
 
     async def on_reply(self, request, response, send_coa):

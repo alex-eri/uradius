@@ -62,8 +62,17 @@ async def main(**args):
     if args.get('tls_regenerate'):
         from . import tlscert
         import socket
-        c, k = tlscert.generate_selfsigned_cert(
+        c, k, cc, kk = tlscert.generate_selfsigned_ca(
                 socket.gethostname()
+                )
+        os.makedirs(pathlib.Path(args['tls_ca_cert']).parent, exist_ok=True)
+        with open(args['tls_ca_cert'], 'wb') as f:
+            f.write(c)
+        os.makedirs(pathlib.Path(args['tls_ca_key']).parent, exist_ok=True)
+        with open(args['tls_ca_key'], 'wb') as f:
+            f.write(k)
+        c, k = tlscert.generate_selfsigned_cert(
+                socket.gethostname(), ca=cc, cakey=kk
                 )
         os.makedirs(pathlib.Path(args['tls_cert']).parent, exist_ok=True)
         with open(args['tls_cert'], 'wb') as f:
@@ -155,6 +164,8 @@ def run():
     parser.add_argument("--eap", action="store_true")
     parser.add_argument("--tls-regenerate", action="store_true")
     parser.add_argument("--tls-generate", action="store_true")
+    parser.add_argument("--tls-ca-cert", default=(pathlib.Path(__file__).parent / 'certs' / 'ca_cert.pem' ))
+    parser.add_argument("--tls-ca-key", default=(pathlib.Path(__file__).parent / 'certs' / 'ca_key.pem') )    
     parser.add_argument("--tls-cert", default=(pathlib.Path(__file__).parent / 'certs' / 'ssl_cert.pem' ))
     parser.add_argument("--tls-key", default=(pathlib.Path(__file__).parent / 'certs' / 'ssl_key.pem') )
     args = parser.parse_args()
