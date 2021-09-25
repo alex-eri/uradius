@@ -16,7 +16,7 @@ setup(
     version="1." + datetime.now().strftime('%Y.%m.%d'),
 
     install_requires=[
-          'sslkeylog', 'uvloop', 'pycrypto', 'aenum', 'asyncache'
+          'git+https://github.com/alex-eri/sslkeylog.git', 'uvloop', 'pycrypto', 'aenum', 'asyncache'
     ],
     packages=['radius', 'radius.eap'],
     package_data={'radius': ['dictionary/dict*', 'certs/*.pem']},
