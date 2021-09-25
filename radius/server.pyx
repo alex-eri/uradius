@@ -95,7 +95,7 @@ async def main(**args):
 
     if args['eap']:
         from .eap.session import EAP
-        handler_bases.append(EAP)
+        handler_bases =  [Handler, EAP]
 
     handler = lambda : type('Handler', tuple(handler_bases), {'c': C})(dct, args)
 

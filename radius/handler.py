@@ -8,26 +8,30 @@ logger = logging.getLogger('handler')
 
 class InternalHandler:
     def __init__(self, dct, args, *a, **kw):
+        logger.debug('init')
         loop = asyncio.get_running_loop()
         self.d = self.dict = self.dictionary = dct
         self.attributes = {}
         if dct:
             self.attributes = dct.attributes
         self.ready = loop.create_task(self.on_init(args))
+        self.ready.add_done_callback(
+            lambda res: logger.debug('ready')
+        )
 
     async def on_auth(self, request, response):
         success = False
 
         if request['EAP-Message']:
-            success = await self.on_eap(request, response)
+            success, c = await self.on_eap(request, response)
             if success != AccessAccept:
                 return success
-
-        success, c = await self.on_framed(request, response, request['user-name'])
-        if success != AccessReject and c.get('password'):
-            success = request.check_password(c['password'], response)
-            if not success:
-                response['Reply-Message'] = 'bad password'
+        else:
+            success, c = await self.on_framed(request, response, request['user-name'])
+            if success != AccessReject and c.get('password'):
+                success = request.check_password(c['password'], response)
+                if not success:
+                    response['Reply-Message'] = 'bad password'
 
         if success:
             if c.get('ip'):

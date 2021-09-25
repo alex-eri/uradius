@@ -45,9 +45,7 @@ class EAP_TLS:
 
     def pull(self):
         try:
-            hs = self.sslo.do_handshake()
-            print('ready', hs)
-
+            self.sslo.do_handshake()
         except ssl.SSLWantReadError as e:
             print('ssl want read')
             pass
@@ -73,8 +71,6 @@ class EAP_Session:
         self.tail = b''
         self.on_user = asyncio.Future()
         self.on_data = asyncio.Future()
-        self.started = False
-        self.tls_ready = False
 
     async def phase1(self, data):
         t = data[0]
@@ -199,18 +195,13 @@ class EAP_Session:
         if self.code1 == Request:
             self.ident = (ident+1) % 256
         print(self.tls.sslo.get_channel_binding() , self.phase , length )
-        if self.started:
-            pass
-        elif self.tls_ready:
-            self.started = True
+        if self.tls.sslo.get_channel_binding() and self.phase == 2 and length == 6:
+        #if self.tls.start:
             if self.method == PEAP:
                 body2 = self.phase2start()
                 # TODO Nak
                 data2 = bytearray([self.code2, self.ident]) + (4 + len(body2)).to_bytes(2, 'big') + body2
                 self.tls.write(body2)
-        elif self.tls.sslo.get_channel_binding():
-            print('ready')
-            self.tls_ready = True
         if self.code1 == Success:
             body = b''
         else:
@@ -235,7 +226,6 @@ class EAP(radius.handler.AbstractHandler):
         context = ssl.SSLContext(ssl.PROTOCOL_TLS)
         context.check_hostname = False
         context.verify_mode = ssl.CERT_NONE
-        context.keylog_filename = "/tmp/sslkey.log"
         context.load_cert_chain(certfile=args['tls_cert'], keyfile=args['tls_key'])
         self.ctx = context
         self.session_cache = TTLCache(10000, 10)
@@ -247,35 +237,20 @@ class EAP(radius.handler.AbstractHandler):
         ###
         ### соединение по двум парам очередей. одна для еапа, вторая для узера
 
-#        def on_user(r):
-#            asyncio.ensure_future(
-#                self.on_framed(request, response, r.result())
-#            ).add_done_callback(lambda r: )
-
-        userdata = {}
-
         message = request['EAP-Message']
-        key = (message[1], request['NAS-IP-ADDRESS'], request[44], request.remote[0])
+        key = (message[1], request['NAS-IP-ADDRESS'], *request.remote[0])
         sess = self.session_cache.pop(key, None) or EAP_Session(self.ctx, self.method)
-        key = ((message[1]+1) % 256, request['NAS-IP-ADDRESS'], request[44], request.remote[0])
+        key = ((message[1]+1) % 256, request['NAS-IP-ADDRESS'], *request.remote[0])
         if sess.code1 == Request:
             self.session_cache[key] = sess
         resp = asyncio.ensure_future(sess.on_message(message))
-        tasks = [resp]
-        if not sess.on_user.done():
-            tasks.append(sess.on_user)
-
+        tasks = (resp, sess.on_user)
         await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
         if sess.on_user.done():
-            if sess.on_data.done():
-                code, userdata = sess.on_data.result()
-            else:
-                code, userdata = await self.on_framed(request, response, await sess.on_user)
-                sess.on_data.set_result((code, userdata))
-
+            userdata = await self.on_framed(request, response, await sess.on_user)
+            sess.on_data.set_result(userdata)
         request['user-name'] = sess.user
         response['EAP-Message'] = await resp
-
         if sess.code1 == Success:
             salt = mschap.create_salt()
             material = sslkeylog.export_keying_material(sess.tls.sslo, 4 * EAP_TLS_MPPE_KEY_LEN, "client EAP encryption")
@@ -289,9 +264,9 @@ class EAP(radius.handler.AbstractHandler):
             recvkeye = mschap.radius_encrypt_keys(recvkey, request.secret, request.RequestAuthenticator, salt)
             response['Microsoft.MS-MPPE-Send-Key'] = salt + sendkeye
             response['Microsoft.MS-MPPE-Recv-Key'] = salt + recvkeye
-            response[102] = SessionId #'EAP-Key-Name'
+            response['EAP-Key-Name'] = SessionId
         if sess.code1 == Success:
-            return AccessAccept, userdata
+            return AccessAccept
         if sess.code1 == Failure:
-            return AccessReject, userdata
-        return AccessChallenge, userdata
+            return AccessReject
+        return AccessChallenge

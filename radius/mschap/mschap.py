@@ -43,7 +43,7 @@ def generate_nt_response_mschap2(authenticator_challenge,peer_challenge,username
     return challenge_response(challenge,password_hash)
 
 
-def challenge_hash(peer_challenge,authenticator_challenge,username):
+def challenge_hash(peer_challenge,authenticator_challenge,username) -> bytes:
     """
    ChallengeHash(
    IN 16-octet               PeerChallenge,
@@ -82,7 +82,7 @@ def challenge_hash(peer_challenge,authenticator_challenge,username):
     sha_hash.update(username)
     return sha_hash.digest()[:8]
 
-def nt_password_hash(passwd,pad_to_21_bytes=True): #!
+def nt_password_hash(passwd,pad_to_21_bytes=True) -> bytes: #!
     """
    NtPasswordHash(
    IN  0-to-256-unicode-char Password,

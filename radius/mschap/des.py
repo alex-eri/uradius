@@ -27,12 +27,12 @@ def DES(key):
 #         ""
 #         return self.des.update(data)
 
-def str_to_key56(key_str):
+def str_to_key56(key_str:bytes) -> bytes:
     ""
     key_56 = key_str.ljust(7, b'\0')[:7]
     return key_56
 
-def key56_to_key64(key_56):
+def key56_to_key64(key_56:bytes) -> bytes:
     ""
     key = bytearray(8)
     key[0] = key_56[0];
@@ -44,9 +44,9 @@ def key56_to_key64(key_56):
     key[6] = ((key_56[5] << 2) & 0xFF) | (key_56[6] >> 6);
     key[7] =  (key_56[6] << 1) & 0xFF;
     key = set_key_odd_parity(key)
-    return key
+    return bytes(key)
 
-def set_key_odd_parity(key):
+def set_key_odd_parity(key:bytearray) -> bytearray:
     ""
     for i in range(len(key)):
         for k in range(7):

@@ -298,6 +298,10 @@ class Packet:
             return v.packed
         elif isinstance(v, dictionary.Value):
             return v.value
+        elif v is None:
+            return bytes()
+        else:
+            logging.critical(f'Unexpected {type(v)}({repr(v)}) on Packet.encode')
 
     def build(self):
 
