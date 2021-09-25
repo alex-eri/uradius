@@ -2,7 +2,7 @@ import secrets
 import ssl
 import asyncio
 import struct
-import sslkeylog
+import radius.sslkeylog as sslkeylog
 from cachetools import TTLCache
 from asyncache import cached
 import traceback

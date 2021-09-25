@@ -11,21 +11,29 @@ import os, sys
 
 from datetime import datetime
 
+
+ext_modules = list(cythonize(
+        glob('radius/*.pyx') + glob('radius/mschap/*.py'),
+        compiler_directives={'language_level' : "3"}
+))
+ext_modules.append(
+    Extension(
+        "_sslkeylog", ["_sslkeylog.c"],
+        libraries = ["ssl", "crypto"]
+    )
+)
 setup(
     name="URadius",
     version="1." + datetime.now().strftime('%Y.%m.%d'),
 
     install_requires=[
-          'git+https://github.com/alex-eri/sslkeylog.git', 'uvloop', 'pycrypto', 'aenum', 'asyncache'
+          'uvloop', 'pycrypto', 'aenum', 'asyncache'
     ],
     packages=['radius', 'radius.eap'],
     package_data={'radius': ['dictionary/dict*', 'certs/*.pem']},
 
-    ext_modules = cythonize(
-         glob('radius/*.pyx') + glob('radius/mschap/*.py'),
-         compiler_directives={'language_level' : "3"}
-    ),
-    python_requires='>=3.6',
+    ext_modules = ext_modules,
+    python_requires='>=3.7',
     entry_points={
         'console_scripts' : ['uradius = radius.server:run']
     }
