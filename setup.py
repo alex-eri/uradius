@@ -18,7 +18,7 @@ ext_modules = list(cythonize(
 ))
 ext_modules.append(
     Extension(
-        "_sslkeylog", ["_sslkeylog.c"],
+        "radius._sslkeylog", ["radius/_sslkeylog.c"],
         libraries = ["ssl", "crypto"]
     )
 )
