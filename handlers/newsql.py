@@ -29,18 +29,18 @@ CREATE TABLE IF NOT EXISTS devices (
 """
 
 class Handler:
-    NASQ='''select * from nas where
+    NASQ='''select sercet, admin_id from nas where
               enabled and
-              (identity = $2 and ip && $1::cidr) or
-              (identity IS NULL and ip && $1::cidr)
-               ORDER BY masklen(ip) DESC NULLS LAST, identity DESC NULLS LAST LIMIT 1'''
+              called = $1
+               ORDER BY id DESC NULLS LAST, called DESC NULLS LAST LIMIT 1'''
 
-    USERQ = '''
-    select * from devices WHERE
+    ABONQ = '''
+    select bandwidth,time_range, from devices WHERE
         enabled and
-        gid = $1 and
-        ( $2 = ANY(nas) or nas is null) and
-        username = $3
+        admin_id = $1 and
+        called = $2 and
+        username = $3,
+        time_range @> now()
     '''
 
     ADMINQ = '''select password,"group" from sysadmins WHERE
