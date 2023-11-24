@@ -344,8 +344,6 @@ VALUE	X-Ascend-Route-IP		Route-IP-No		0
 VALUE	X-Ascend-Route-IP		Route-IP-Yes		1
 VALUE	X-Ascend-Route-IPX		Route-IPX-No		0
 VALUE	X-Ascend-Route-IPX		Route-IPX-Yes		1
-VALUE	X-Ascend-Route-IPX		Route-IPX-No		0
-VALUE	X-Ascend-Route-IPX		Route-IPX-Yes		1
 VALUE	X-Ascend-Bridge			Bridge-No		0
 VALUE	X-Ascend-Bridge			Bridge-Yes		1
 VALUE	X-Ascend-Send-Auth		Send-Auth-None		0

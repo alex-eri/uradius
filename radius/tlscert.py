@@ -85,7 +85,7 @@ def generate_selfsigned_cert(hostname, ip_addresses=None, ca=None, cakey=None, k
     san = x509.SubjectAlternativeName(alt_names)
 
     # path_len=0 means this cert can only sign itself, not other certs.
-    basic_contraints = x509.BasicConstraints(ca=False, path_length=0)
+    basic_contraints = x509.BasicConstraints(ca=False, path_length=None)
     now = datetime.utcnow()
     cert = (
         x509.CertificateBuilder()
@@ -97,12 +97,12 @@ def generate_selfsigned_cert(hostname, ip_addresses=None, ca=None, cakey=None, k
         .not_valid_after(now + timedelta(days=5*365))
         .add_extension(basic_contraints, False)
         .add_extension(san, False)
-        .sign(key, hashes.SHA256(), default_backend())
+        # .sign(key, hashes.SHA256(), default_backend())
         .sign(cakey, hashes.SHA256(), default_backend())
     )
-    cert_pem = ca.public_bytes(encoding=serialization.Encoding.PEM)
-    cert_pem += '\n'
-    cert_pem += cert.public_bytes(encoding=serialization.Encoding.PEM)
+    # cert_pem = ca.public_bytes(encoding=serialization.Encoding.PEM)
+    # cert_pem += b'\n'
+    cert_pem = cert.public_bytes(encoding=serialization.Encoding.PEM)
     key_pem = key.private_bytes(
         encoding=serialization.Encoding.PEM,
         format=serialization.PrivateFormat.TraditionalOpenSSL,

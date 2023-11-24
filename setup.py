@@ -27,7 +27,7 @@ setup(
     version="1." + datetime.now().strftime('%Y.%m.%d'),
 
     install_requires=[
-          'uvloop', 'pycrypto', 'aenum', 'asyncache'
+          'uvloop', 'pycryptodome', 'aenum', 'asyncache', 'cryptography'
     ],
     packages=['radius', 'radius.eap'],
     package_data={'radius': ['dictionary/dict*', 'certs/*.pem']},
