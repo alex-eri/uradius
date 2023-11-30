@@ -2,7 +2,13 @@ import argparse
 import asyncio
 import pathlib
 import ssl
-import uvloop
+import platform
+
+if platform.system() == 'Linux':
+    import uvloop
+else:
+    uvloop == None
+
 import importlib
 import os
 import importlib.util
@@ -18,17 +24,21 @@ import time
 import multiprocessing
 import socket
 
+
+
+
 def stream_process(protocol_factory, sock, ssl=None):
     loop = asyncio.new_event_loop()
     server = loop.run_until_complete(
         loop.create_server(protocol_factory, sock=sock, ssl=ssl)
         )
-    loop.run_forever()
-    server.close()
-    loop.run_until_complete(server.wait_closed())
-    loop.run_until_complete(server.get_protocol().wait_closed())
-    loop.close()
-
+    try:
+        loop.run_forever()
+    finally:
+        server.close()
+        loop.run_until_complete(server.wait_closed())
+        # loop.run_until_complete(server.get_protocol().wait_closed())
+        loop.close()
 
 def stream_process_pool(protocol_factory, port, ssl=None, n=4):
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -42,10 +52,11 @@ def udp_process(protocol_factory, sock):
     transport, protocol = loop.run_until_complete(
         loop.create_datagram_endpoint(protocol_factory, sock=sock)
         )
-    loop.run_forever()
-    transport.close()
-    loop.run_until_complete(protocol.wait_closed())
-    loop.close()
+    try:
+        loop.run_forever()
+    finally:
+        transport.close()
+        loop.close()
 
 def udp_process_pool(protocol_factory, port, n=4):
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -102,7 +113,7 @@ async def main(**args):
 
     handler_bases =  [Handler, AbstractHandler]
 
-    if args['eap']:
+    if args.get('eap'):
         from .eap.session import EAP
         handler_bases =  [Handler, EAP]
 
@@ -191,8 +202,13 @@ def run():
         try:
             loop.run_forever()
         except KeyboardInterrupt:
-            pass
-    asyncio.run(close(servers))
+            loop.run_until_complete(close(servers))
+        finally:
+            loop.stop()
+            loop.run_until_complete(loop.shutdown_asyncgens())
+            loop.close()
+            
+    
 
 if __name__ == "__main__":
     run()
