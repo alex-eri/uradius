@@ -4,10 +4,10 @@ import pathlib
 import ssl
 import platform
 
-if platform.system() == 'Linux':
-    import uvloop
-else:
-    uvloop == None
+# if platform.system() == 'Linux':
+#     import uvloop
+# else:
+#    uvloop == None
 
 import importlib
 import os
