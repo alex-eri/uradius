@@ -193,7 +193,7 @@ def run():
         logging.basicConfig(level=level)
 
     #uvloop.install()
-    loop = asyncio.get_event_loop()
+    loop = asyncio.new_event_loop()
     servers = loop.run_until_complete(main(**vars(args)))
 
     for server in servers: server.start()
