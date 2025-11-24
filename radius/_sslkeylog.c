@@ -216,11 +216,23 @@ static void sslkeylog_ex_data_new(void *parent, void *ptr, CRYPTO_EX_DATA *ad,
     SSL_CTX_set_ex_data(parent, idx, ex_data);
 }
 
+#if OPENSSL_VERSION_NUMBER >= ( (3<<28) |(0<<20) |(0<<4) |0x0L )
+
+static int sslkeylog_ex_data_dup(CRYPTO_EX_DATA *to, const CRYPTO_EX_DATA *from,
+                                 void **from_d, int idx, long argl, void *argp)
+{
+    return 0;
+}
+
+#else
+
 static int sslkeylog_ex_data_dup(CRYPTO_EX_DATA *to, const CRYPTO_EX_DATA *from,
                                  void *from_d, int idx, long argl, void *argp)
 {
     return 0;
 }
+
+#endif
 
 static void sslkeylog_ex_data_free(void *parent, void *ptr, CRYPTO_EX_DATA *ad,
                                    int idx, long argl, void *argp)
