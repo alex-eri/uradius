@@ -10,7 +10,7 @@ import platform
 #    uvloop == None
 
 import importlib
-import os
+import os, os.path
 import importlib.util
 import logging
 
@@ -67,7 +67,6 @@ def udp_process_pool(protocol_factory, port, n=4):
 
 async def main(**args):
     if args.get('tls_generate'):
-         import os.path
          args['tls_regenerate'] = not (os.path.isfile(args['tls_cert']) and  os.path.isfile(args['tls_key']))
         
     if args.get('tls_regenerate'):

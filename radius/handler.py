@@ -16,7 +16,7 @@ class InternalHandler:
             self.attributes = dct.attributes
         self.ready = loop.create_task(self.on_init(args))
         self.ready.add_done_callback(
-            lambda res: logger.debug('ready')
+            lambda res: logger.debug('ready %s, exception %s', res.result(), res.exception())
         )
 
     async def on_auth(self, request, response):

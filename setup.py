@@ -47,7 +47,7 @@ ext_modules.append(
 )
 setup(
     name="URadius",
-    version="1." + datetime.now().strftime('%Y.%m.%d'),
+    version=datetime.now().strftime('%Y.%m.%d'),
 
     install_requires=[
          'pycryptodome', 'aenum', 'asyncache', 'cryptography'
