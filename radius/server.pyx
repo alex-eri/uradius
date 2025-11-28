@@ -23,11 +23,13 @@ from .protocol import UDPProtocol, TCPProtocol, RadsecProtocol
 import time
 import multiprocessing
 import socket
+import setproctitle
 
 
 
-
-def stream_process(protocol_factory, sock, ssl=None):
+def stream_process(protocol_factory, sock: socket.socket, ssl=None):
+    addr = sock.getsockname()
+    setproctitle.setproctitle(f'radius { "radsec" if ssl else "tcp" } {addr[0]}:{addr[1]}')
     loop = asyncio.new_event_loop()
     server = loop.run_until_complete(
         loop.create_server(protocol_factory, sock=sock, ssl=ssl)
@@ -48,6 +50,8 @@ def stream_process_pool(protocol_factory, port, ssl=None, n=4):
 
 
 def udp_process(protocol_factory, sock):
+    addr = sock.getsockname()
+    setproctitle.setproctitle(f'radius udp {addr[0]}:{addr[1]}')
     loop = asyncio.new_event_loop()
     transport, protocol = loop.run_until_complete(
         loop.create_datagram_endpoint(protocol_factory, sock=sock)

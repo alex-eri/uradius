@@ -16,7 +16,7 @@ ATTRIBUTE       CoovaChilli-Config                  	6       string
 ATTRIBUTE       CoovaChilli-Lang                    	7       string
 ATTRIBUTE       CoovaChilli-Version                 	8       string
 ATTRIBUTE       CoovaChilli-OriginalURL             	9       string
-ATTRIBUTE       CoovaChilli-Acct-View-Point             10	integer
+ATTRIBUTE       CoovaChilli-Acct-View-Point             10	    integer
 
 VALUE	CoovaChilli-Acct-View-Point CoovaChilli-NAS-View-Point	1
 VALUE	CoovaChilli-Acct-View-Point CoovaChilli-Client-View-Point 2

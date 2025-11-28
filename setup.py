@@ -50,7 +50,7 @@ setup(
     version=datetime.now().strftime('%Y.%m.%d'),
 
     install_requires=[
-         'pycryptodome', 'aenum', 'asyncache', 'cryptography'
+         'pycryptodome', 'aenum', 'asyncache', 'cryptography', 'setproctitle'
     ],
     packages=['radius', 'radius.eap'],
     package_data={'radius': ['dictionary/dict*']},
