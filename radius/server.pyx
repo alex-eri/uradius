@@ -24,13 +24,16 @@ import time
 import multiprocessing
 import socket
 import setproctitle
+from functools import partial
 
-
-
-def stream_process(protocol_factory, sock: socket.socket, ssl=None):
+def stream_process(handler, sock: socket.socket, ssl=None):
     addr = sock.getsockname()
     setproctitle.setproctitle(f'radius { "radsec" if ssl else "tcp" } {addr[0]}:{addr[1]}')
     loop = asyncio.new_event_loop()
+    if ssl:
+        protocol_factory = partial(RadsecProtocol,handler(loop))
+    else:
+        protocol_factory = partial(TCPProtocol,handler(loop))
     server = loop.run_until_complete(
         loop.create_server(protocol_factory, sock=sock, ssl=ssl)
         )
@@ -42,17 +45,18 @@ def stream_process(protocol_factory, sock: socket.socket, ssl=None):
         # loop.run_until_complete(server.get_protocol().wait_closed())
         loop.close()
 
-def stream_process_pool(protocol_factory, port, ssl=None, n=4):
+def stream_process_pool(handler, port, ssl=None, n=4):
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.bind(('', port))
-    processes = [ multiprocessing.Process(target=stream_process, args=(protocol_factory, sock, ssl), name=f"tcp {port} #{i}") for i in range(n) ]
+    processes = [ multiprocessing.Process(target=stream_process, args=(handler, sock, ssl), name=f"tcp {port} #{i}") for i in range(n) ]
     return processes
 
 
-def udp_process(protocol_factory, sock):
+def udp_process(handler, sock):
     addr = sock.getsockname()
     setproctitle.setproctitle(f'radius udp {addr[0]}:{addr[1]}')
     loop = asyncio.new_event_loop()
+    protocol_factory = partial(UDPProtocol,handler(loop))
     transport, protocol = loop.run_until_complete(
         loop.create_datagram_endpoint(protocol_factory, sock=sock)
         )
@@ -62,10 +66,10 @@ def udp_process(protocol_factory, sock):
         transport.close()
         loop.close()
 
-def udp_process_pool(protocol_factory, port, n=4):
+def udp_process_pool(handler, port, n=4):
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.bind(('', port))
-    processes = [ multiprocessing.Process(target=udp_process, args=(protocol_factory, sock), name=f"udp {port} #{i}") for i in range(n) ]
+    processes = [ multiprocessing.Process(target=udp_process, args=(handler, sock), name=f"udp {port} #{i}") for i in range(n) ]
     return processes
 
 
@@ -120,19 +124,19 @@ async def main(**args):
         from .eap.session import EAP
         handler_bases =  [Handler, EAP]
 
-    handler = lambda : type('Handler', tuple(handler_bases), {'c': C})(dct, args)
+    handler = partial( type('Handler', tuple(handler_bases), {'c': C}), dct, args)
 
     if args.get('udp'):
         if args.get('eap'):
             udp_workers = 1
         else:
             udp_workers = args['workers']
-        servers.extend(udp_process_pool(lambda: UDPProtocol(handler()), 1812, n=udp_workers))
-        servers.extend(udp_process_pool(lambda: UDPProtocol(handler()), 1813, n=udp_workers))
+        servers.extend(udp_process_pool(handler, 1812, n=udp_workers))
+        servers.extend(udp_process_pool(handler, 1813, n=udp_workers))
 
     if args.get('tcp'):
-        servers.extend(stream_process_pool(lambda: TCPProtocol(handler()), 1812, n=args['workers']))
-        servers.extend(stream_process_pool(lambda: TCPProtocol(handler()), 1813, n=args['workers']))
+        servers.extend(stream_process_pool(handler, 1812, n=args['workers']))
+        servers.extend(stream_process_pool(handler, 1813, n=args['workers']))
 
     if args.get('tls'):
         server_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
@@ -150,8 +154,8 @@ async def main(**args):
         except Exception as e:
             raise e
 
-        servers.extend(stream_process_pool(lambda: RadsecProtocol(handler()), 2083, ssl=server_context, n=args['workers']))
-        servers.extend(stream_process_pool(lambda: RadsecProtocol(handler()), 2084, ssl=server_context, n=args['workers']))
+        servers.extend(stream_process_pool(handler, 2083, ssl=server_context, n=args['workers']))
+        servers.extend(stream_process_pool(handler, 2084, ssl=server_context, n=args['workers']))
 
     return servers
 

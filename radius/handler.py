@@ -7,9 +7,9 @@ logger = logging.getLogger('handler')
 
 
 class InternalHandler:
-    def __init__(self, dct, args, *a, **kw):
+    def __init__(self, dct, args, loop, *a, **kw):
         logger.debug('init')
-        loop = asyncio.get_running_loop()
+        #loop = asyncio.get_running_loop()
         self.d = self.dict = self.dictionary = dct
         self.attributes = {}
         if dct:
