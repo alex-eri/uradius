@@ -75,23 +75,59 @@ def udp_process_pool(handler, port, n=4):
 
 async def main(**args):
     if args.get('tls_generate'):
-         args['tls_regenerate'] = not (os.path.isfile(args['tls_cert']) and  os.path.isfile(args['tls_key']))
         
+        if (os.path.isfile(args['tls_cert']) and  os.path.isfile(args['tls_key'])):
+            from . import tlscert
+            with open(args['tls_cert'], 'rb') as f:
+                args['tls_regenerate'] = tlscert.check_expired_cert(f.read())
+        else:
+            args['tls_regenerate'] = True
+            
+
     if args.get('tls_regenerate'):
         from . import tlscert
-        import socket
-        c, k, cc, kk = tlscert.generate_selfsigned_ca(
-                socket.gethostname()
-                )
+        new_ca = True
+        if (os.path.isfile(args['tls_ca_cert'])):
+            with open(args['tls_ca_cert'], 'rb') as f:
+                new_ca = tlscert.check_expired_cert(f.read())       
+
         os.makedirs(pathlib.Path(args['tls_ca_cert']).parent, exist_ok=True)
-        with open(args['tls_ca_cert'], 'wb') as f:
-            f.write(c)
-        os.makedirs(pathlib.Path(args['tls_ca_key']).parent, exist_ok=True)
-        with open(args['tls_ca_key'], 'wb') as f:
-            f.write(k)
+        if args['tls_ca_key']:
+            os.makedirs(pathlib.Path(args['tls_ca_key']).parent, exist_ok=True)
+        else:
+            args['tls_ca_key'] = args['tls_ca_cert']
+
+        ca_k = None
+        if os.path.isfile(args['tls_ca_key'])
+            with open(args['tls_ca_key']) as f:
+                ca_k = tlscert.load_key(f.read())
+
+        if new_ca or not ca_k:
+            import socket
+
+            ca_c_pem, ca_k_pem, ca_c, ca_k = tlscert.generate_selfsigned_ca(
+                    socket.gethostname(), key=ca_k
+                    )
+
+            with open(args['tls_ca_key'], 'wb') as f:
+                f.write(ca_k_pem)
+            mode = 'wb'
+            if args['tls_ca_key'] == args['tls_ca_cert'] :
+                mode = 'ab'
+            with open(args['tls_ca_cert'], mode) as f:
+                f.write(ca_c_pem)
+        else:
+
+            with open(args['tls_ca_key'], 'rb') as f:
+                ca_k = tlscert.load_key(f.read())
+
+            with open(args['tls_ca_cert'], 'rb') as f:
+                ca_c = tlscert.load_cert(f.read())
+
+
         c, k = tlscert.generate_selfsigned_cert(
-                socket.gethostname(), ca=cc, cakey=kk
-                )
+                    socket.gethostname(), ca=ca_c, cakey=ca_k
+                    )
         os.makedirs(pathlib.Path(args['tls_cert']).parent, exist_ok=True)
         with open(args['tls_cert'], 'wb') as f:
             f.write(c)
