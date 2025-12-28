@@ -14,6 +14,8 @@ import os, os.path
 import importlib.util
 import logging
 
+logger = logging.getLogger('server')
+
 from . import constants as C
 from . import dictionary
 
@@ -152,7 +154,7 @@ async def main(**args):
         
     t = time.time()
     dct = dictionary.Dictionary(args.get('dictionary', pathlib.Path(__file__).parent / 'dictionary' / 'dictionary'))
-    logging.info(time.time()-t)
+    logger.info(time.time()-t)
 
     handler_bases =  [Handler, AbstractHandler]
 
@@ -185,7 +187,7 @@ async def main(**args):
                     args['tls_key'])
 
         except FileNotFoundError as e:
-            logging.critical("Certificates not found")
+            logger.critical("Certificates not found")
             raise e
         except Exception as e:
             raise e
