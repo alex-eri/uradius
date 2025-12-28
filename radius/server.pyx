@@ -169,18 +169,17 @@ async def main(**args):
             udp_workers = 1
         else:
             udp_workers = args['workers']
-        servers.extend(udp_process_pool(handler, 1812, n=udp_workers))
-        servers.extend(udp_process_pool(handler, 1813, n=udp_workers))
+        for port in args['udp_ports']:
+            servers.extend(udp_process_pool(handler, port, n=udp_workers))
 
     if args.get('tcp'):
-        servers.extend(stream_process_pool(handler, 1812, n=args['workers']))
-        servers.extend(stream_process_pool(handler, 1813, n=args['workers']))
+        for port in args['tcp_ports']:
+            servers.extend(stream_process_pool(handler, port, n=args['workers']))
 
     if args.get('tls'):
         server_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
         server_context.check_hostname = False
         server_context.verify_mode = ssl.CERT_OPTIONAL
-
         try:
             server_context.load_cert_chain(
                     args['tls_cert'],
@@ -191,10 +190,9 @@ async def main(**args):
             raise e
         except Exception as e:
             raise e
-
-        servers.extend(stream_process_pool(handler, 2083, ssl=server_context, n=args['workers']))
-        servers.extend(stream_process_pool(handler, 2084, ssl=server_context, n=args['workers']))
-
+        for port in args['tls_ports']:
+            servers.extend(stream_process_pool(handler, port, ssl=server_context, n=args['workers']))
+        
     return servers
 
 
@@ -224,6 +222,9 @@ def run():
     parser.add_argument("--tls-ca-key", default=(pathlib.Path(__file__).parent / 'certs' / 'ca_key.pem') )    
     parser.add_argument("--tls-cert", default=(pathlib.Path(__file__).parent / 'certs' / 'ssl_cert.pem' ))
     parser.add_argument("--tls-key", default=(pathlib.Path(__file__).parent / 'certs' / 'ssl_key.pem') )
+    parser.add_argument("--tcp-ports",nargs='*', type=int, default=[1812,1813])
+    parser.add_argument("--udp-ports",nargs='*', type=int, default=[1812,1813])
+    parser.add_argument("--tls-ports",nargs='*', type=int, default=[2083,2084])
     args = parser.parse_args()
 
     level = logging.ERROR
