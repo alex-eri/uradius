@@ -2,96 +2,101 @@ from . import mschap
 import hashlib
 import random
 
-SHSpad1 = \
-   b"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"+\
-   b"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"+\
-   b"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"+\
-   b"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+SHSpad1 = (
+    b"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    b"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    b"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    b"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+)
 
-SHSpad2 = \
-   b"\xf2\xf2\xf2\xf2\xf2\xf2\xf2\xf2\xf2\xf2"+\
-   b"\xf2\xf2\xf2\xf2\xf2\xf2\xf2\xf2\xf2\xf2"+\
-   b"\xf2\xf2\xf2\xf2\xf2\xf2\xf2\xf2\xf2\xf2"+\
-   b"\xf2\xf2\xf2\xf2\xf2\xf2\xf2\xf2\xf2\xf2"
+SHSpad2 = (
+    b"\xf2\xf2\xf2\xf2\xf2\xf2\xf2\xf2\xf2\xf2"
+    b"\xf2\xf2\xf2\xf2\xf2\xf2\xf2\xf2\xf2\xf2"
+    b"\xf2\xf2\xf2\xf2\xf2\xf2\xf2\xf2\xf2\xf2"
+    b"\xf2\xf2\xf2\xf2\xf2\xf2\xf2\xf2\xf2\xf2"
+)
 
-SHApad1 = b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' #40 Bytes
-SHApad2 = b'\xf2\xf2\xf2\xf2\xf2\xf2\xf2\xf2\xf2\xf2\xf2\xf2\xf2\xf2\xf2\xf2\xf2\xf2\xf2\xf2\xf2\xf2\xf2\xf2\xf2\xf2\xf2\xf2\xf2\xf2\xf2\xf2\xf2\xf2\xf2\xf2\xf2\xf2\xf2\xf2' #40 Bytes
+SHApad1 = b"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"  # 40 Bytes
+SHApad2 = b"\xf2\xf2\xf2\xf2\xf2\xf2\xf2\xf2\xf2\xf2\xf2\xf2\xf2\xf2\xf2\xf2\xf2\xf2\xf2\xf2\xf2\xf2\xf2\xf2\xf2\xf2\xf2\xf2\xf2\xf2\xf2\xf2\xf2\xf2\xf2\xf2\xf2\xf2\xf2\xf2"  # 40 Bytes
 
-Magic1 = \
-    b"\x54\x68\x69\x73\x20\x69\x73\x20\x74"+\
-    b"\x68\x65\x20\x4d\x50\x50\x45\x20\x4d"+\
+Magic1 = (
+    b"\x54\x68\x69\x73\x20\x69\x73\x20\x74"
+    b"\x68\x65\x20\x4d\x50\x50\x45\x20\x4d"
     b"\x61\x73\x74\x65\x72\x20\x4b\x65\x79"
+)
 
-Magic2 = \
-    b"\x4f\x6e\x20\x74\x68\x65\x20\x63\x6c\x69"\
-    b"\x65\x6e\x74\x20\x73\x69\x64\x65\x2c\x20"\
-    b"\x74\x68\x69\x73\x20\x69\x73\x20\x74\x68"\
-    b"\x65\x20\x73\x65\x6e\x64\x20\x6b\x65\x79"\
-    b"\x3b\x20\x6f\x6e\x20\x74\x68\x65\x20\x73"\
-    b"\x65\x72\x76\x65\x72\x20\x73\x69\x64\x65"\
-    b"\x2c\x20\x69\x74\x20\x69\x73\x20\x74\x68"\
-    b"\x65\x20\x72\x65\x63\x65\x69\x76\x65\x20"\
+Magic2 = (
+    b"\x4f\x6e\x20\x74\x68\x65\x20\x63\x6c\x69"
+    b"\x65\x6e\x74\x20\x73\x69\x64\x65\x2c\x20"
+    b"\x74\x68\x69\x73\x20\x69\x73\x20\x74\x68"
+    b"\x65\x20\x73\x65\x6e\x64\x20\x6b\x65\x79"
+    b"\x3b\x20\x6f\x6e\x20\x74\x68\x65\x20\x73"
+    b"\x65\x72\x76\x65\x72\x20\x73\x69\x64\x65"
+    b"\x2c\x20\x69\x74\x20\x69\x73\x20\x74\x68"
+    b"\x65\x20\x72\x65\x63\x65\x69\x76\x65\x20"
     b"\x6b\x65\x79\x2e"
+)
 
-Magic3 = \
-    b"\x4f\x6e\x20\x74\x68\x65\x20\x63\x6c\x69"\
-    b"\x65\x6e\x74\x20\x73\x69\x64\x65\x2c\x20"\
-    b"\x74\x68\x69\x73\x20\x69\x73\x20\x74\x68"\
-    b"\x65\x20\x72\x65\x63\x65\x69\x76\x65\x20"\
-    b"\x6b\x65\x79\x3b\x20\x6f\x6e\x20\x74\x68"\
-    b"\x65\x20\x73\x65\x72\x76\x65\x72\x20\x73"\
-    b"\x69\x64\x65\x2c\x20\x69\x74\x20\x69\x73"\
-    b"\x20\x74\x68\x65\x20\x73\x65\x6e\x64\x20"\
+Magic3 = (
+    b"\x4f\x6e\x20\x74\x68\x65\x20\x63\x6c\x69"
+    b"\x65\x6e\x74\x20\x73\x69\x64\x65\x2c\x20"
+    b"\x74\x68\x69\x73\x20\x69\x73\x20\x74\x68"
+    b"\x65\x20\x72\x65\x63\x65\x69\x76\x65\x20"
+    b"\x6b\x65\x79\x3b\x20\x6f\x6e\x20\x74\x68"
+    b"\x65\x20\x73\x65\x72\x76\x65\x72\x20\x73"
+    b"\x69\x64\x65\x2c\x20\x69\x74\x20\x69\x73"
+    b"\x20\x74\x68\x65\x20\x73\x65\x6e\x64\x20"
     b"\x6b\x65\x79\x2e"
+)
 
 
 def mppe_chap2_gen_keys(password, nt_response, length=16):
     """
-3.3.  Generating 128-bit Session Keys
+    3.3.  Generating 128-bit Session Keys
 
-   When used in conjunction with MS-CHAP-2 authentication, the initial
-   MPPE session keys are derived from the peer's Windows NT password.
+       When used in conjunction with MS-CHAP-2 authentication, the initial
+       MPPE session keys are derived from the peer's Windows NT password.
 
-   The first step is to obfuscate the peer's password using
-   NtPasswordHash() function as described in [8].
+       The first step is to obfuscate the peer's password using
+       NtPasswordHash() function as described in [8].
 
-      NtPasswordHash(Password, PasswordHash)
+          NtPasswordHash(Password, PasswordHash)
 
-   The first 16 octets of the result are then hashed again using the MD4
-   algorithm.
+       The first 16 octets of the result are then hashed again using the MD4
+       algorithm.
 
-      PasswordHashHash = md4(PasswordHash)
+          PasswordHashHash = md4(PasswordHash)
 
-   The first 16 octets of this second hash are used together with the
-   NT-Response field from the MS-CHAP-2 Response packet [8] as the basis
-   for the master session key:
+       The first 16 octets of this second hash are used together with the
+       NT-Response field from the MS-CHAP-2 Response packet [8] as the basis
+       for the master session key:
 
-      GetMasterKey(PasswordHashHash, NtResponse, MasterKey)
+          GetMasterKey(PasswordHashHash, NtResponse, MasterKey)
 
-   Once the master key has been generated, it is used to derive two
-   128-bit master session keys, one for sending and one for receiving:
+       Once the master key has been generated, it is used to derive two
+       128-bit master session keys, one for sending and one for receiving:
 
-GetAsymmetricStartKey(MasterKey, MasterSendKey, 16, TRUE, TRUE)
-GetAsymmetricStartKey(MasterKey, MasterReceiveKey, 16, FALSE, TRUE)
+    GetAsymmetricStartKey(MasterKey, MasterSendKey, 16, TRUE, TRUE)
+    GetAsymmetricStartKey(MasterKey, MasterReceiveKey, 16, FALSE, TRUE)
 
-   The master session keys are never used to encrypt or decrypt data;
-   they are only used in the derivation of transient session keys.  The
-   initial transient session keys are obtained by calling the function
-   GetNewKeyFromSHA() (described in [3]):
+       The master session keys are never used to encrypt or decrypt data;
+       they are only used in the derivation of transient session keys.  The
+       initial transient session keys are obtained by calling the function
+       GetNewKeyFromSHA() (described in [3]):
 
-GetNewKeyFromSHA(MasterSendKey, MasterSendKey, 16, SendSessionKey)
-GetNewKeyFromSHA(MasterReceiveKey, MasterReceiveKey, 16,
-                                                ReceiveSessionKey)
+    GetNewKeyFromSHA(MasterSendKey, MasterSendKey, 16, SendSessionKey)
+    GetNewKeyFromSHA(MasterReceiveKey, MasterReceiveKey, 16,
+                                                    ReceiveSessionKey)
 
-   Finally, the RC4 tables are initialized using the new session keys:
+       Finally, the RC4 tables are initialized using the new session keys:
 
-      rc4_key(SendRC4key, 16, SendSessionKey)
-      rc4_key(ReceiveRC4key, 16, ReceiveSessionKey)
+          rc4_key(SendRC4key, 16, SendSessionKey)
+          rc4_key(ReceiveRC4key, 16, ReceiveSessionKey)
     """
     password_hash = mschap.nt_password_hash(password, False)
     password_hash_hash = mschap.hash_nt_password_hash(password_hash)
     master_key = get_master_key(password_hash_hash, nt_response)
-    return master_gen_keys(master_key,length)
+    return master_gen_keys(master_key, length)
 
 
 def get_new_key_from_sha(start_key, session_key, length=16):
@@ -106,12 +111,14 @@ def get_new_key_from_sha(start_key, session_key, length=16):
 
 from Crypto.Cipher import ARC4
 
+
 def rc4_key(SessionKey):
     # Initialise RC4 tables with Session key
     # https://tools.ietf.org/html/rfc3079#section-3.3
 
     rc4 = ARC4.new(SessionKey)
     return rc4
+
 
 def master_gen_keys(master_key, length=16):
     print(master_key.hex())
@@ -120,30 +127,30 @@ def master_gen_keys(master_key, length=16):
     return (master_send_key, master_recv_key)
 
 
-def get_master_key(password_hash_hash,nt_response):
+def get_master_key(password_hash_hash, nt_response):
     """
-   GetMasterKey(
-   IN  16-octet  PasswordHashHash,
-   IN  24-octet  NTResponse,
-   OUT 16-octet  MasterKey )
-   {
-      20-octet Digest
+    GetMasterKey(
+    IN  16-octet  PasswordHashHash,
+    IN  24-octet  NTResponse,
+    OUT 16-octet  MasterKey )
+    {
+       20-octet Digest
 
-      ZeroMemory(Digest, sizeof(Digest));
+       ZeroMemory(Digest, sizeof(Digest));
 
-      /*
-       * SHSInit(), SHSUpdate() and SHSFinal()
-       * are an implementation of the Secure Hash Standard [7].
-       */
+       /*
+        * SHSInit(), SHSUpdate() and SHSFinal()
+        * are an implementation of the Secure Hash Standard [7].
+        */
 
-      SHSInit(Context);
-      SHSUpdate(Context, PasswordHashHash, 16);
-      SHSUpdate(Context, NTResponse, 24);
-      SHSUpdate(Context, Magic1, 27);
-      SHSFinal(Context, Digest);
+       SHSInit(Context);
+       SHSUpdate(Context, PasswordHashHash, 16);
+       SHSUpdate(Context, NTResponse, 24);
+       SHSUpdate(Context, Magic1, 27);
+       SHSFinal(Context, Digest);
 
-      MoveMemory(MasterKey, Digest, 16);
-   }
+       MoveMemory(MasterKey, Digest, 16);
+    }
 
     """
     sha_hash = hashlib.sha1()
@@ -156,48 +163,48 @@ def get_master_key(password_hash_hash,nt_response):
 def get_asymetric_start_key(master_key, session_key_length, is_send, is_server):
     """
 
-VOID
-   GetAsymetricStartKey(
-   IN   16-octet      MasterKey,
-   OUT  8-to-16 octet SessionKey,
-   IN   INTEGER       SessionKeyLength,
-   IN   BOOLEAN       IsSend,
-   IN   BOOLEAN       IsServer )
-   {
+    VOID
+       GetAsymetricStartKey(
+       IN   16-octet      MasterKey,
+       OUT  8-to-16 octet SessionKey,
+       IN   INTEGER       SessionKeyLength,
+       IN   BOOLEAN       IsSend,
+       IN   BOOLEAN       IsServer )
+       {
 
-      20-octet Digest;
+          20-octet Digest;
 
-      ZeroMemory(Digest, 20);
+          ZeroMemory(Digest, 20);
 
-      if (IsSend) {
-         if (IsServer) {
-            s = Magic3
-         } else {
-            s = Magic2
-         }
-      } else {
-         if (IsServer) {
+          if (IsSend) {
+             if (IsServer) {
+                s = Magic3
+             } else {
+                s = Magic2
+             }
+          } else {
+             if (IsServer) {
 
-            s = Magic2
-         } else {
-            s = Magic3
-         }
-      }
+                s = Magic2
+             } else {
+                s = Magic3
+             }
+          }
 
-      /*
-       * SHSInit(), SHSUpdate() and SHSFinal()
-       * are an implementation of the Secure Hash Standard [7].
-       */
+          /*
+           * SHSInit(), SHSUpdate() and SHSFinal()
+           * are an implementation of the Secure Hash Standard [7].
+           */
 
-      SHSInit(Context);
-      SHSUpdate(Context, MasterKey, 16);
-      SHSUpdate(Context, SHSpad1, 40);
-      SHSUpdate(Context, s, 84);
-      SHSUpdate(Context, SHSpad2, 40);
-      SHSFinal(Context, Digest);
+          SHSInit(Context);
+          SHSUpdate(Context, MasterKey, 16);
+          SHSUpdate(Context, SHSpad1, 40);
+          SHSUpdate(Context, s, 84);
+          SHSUpdate(Context, SHSpad2, 40);
+          SHSFinal(Context, Digest);
 
-      MoveMemory(SessionKey, Digest, SessionKeyLength);
-   }
+          MoveMemory(SessionKey, Digest, SessionKeyLength);
+       }
     """
     if is_send:
         if is_server:
@@ -220,10 +227,10 @@ VOID
 def create_plain_text(key, pad=True):
     key_len = len(key)
     if pad:
-        just = ((((key_len + 1 ) >> 4) + 1) << 4)-1
-        return bytes([key_len])+key.ljust(just, b'\x00')
+        just = ((((key_len + 1) >> 4) + 1) << 4) - 1
+        return bytes([key_len]) + key.ljust(just, b"\x00")
     else:
-        return bytes([key_len])+key
+        return bytes([key_len]) + key
 
 
 def create_salts():
@@ -235,42 +242,42 @@ def create_salts():
 
 
 def create_salt():
-    return bytes([128+random.randrange(0, 128), random.randrange(0, 256)])
+    return bytes([128 + random.randrange(0, 128), random.randrange(0, 256)])
 
 
 def radius_encrypt_keys(plain_text, secret, request_authenticator, salt):
     """
-  Construct a plaintext version of the String field by concate-
-         nating the Key-Length and Key sub-fields.  If necessary, pad
-         the resulting string until its length (in octets) is an even
-         multiple of 16.  It is recommended that zero octets (0x00) be
-         used for padding.  Call this plaintext P.
+    Construct a plaintext version of the String field by concate-
+           nating the Key-Length and Key sub-fields.  If necessary, pad
+           the resulting string until its length (in octets) is an even
+           multiple of 16.  It is recommended that zero octets (0x00) be
+           used for padding.  Call this plaintext P.
 
-         Call the shared secret S, the pseudo-random 128-bit Request
-         Authenticator (from the corresponding Access-Request packet) R,
-         and the contents of the Salt field A.  Break P into 16 octet
-         chunks p(1), p(2)...p(i), where i = len(P)/16.  Call the
-         ciphertext blocks c(1), c(2)...c(i) and the final ciphertext C.
-         Intermediate values b(1), b(2)...c(i) are required.  Encryption
-         is performed in the following manner ('+' indicates
-         concatenation):
+           Call the shared secret S, the pseudo-random 128-bit Request
+           Authenticator (from the corresponding Access-Request packet) R,
+           and the contents of the Salt field A.  Break P into 16 octet
+           chunks p(1), p(2)...p(i), where i = len(P)/16.  Call the
+           ciphertext blocks c(1), c(2)...c(i) and the final ciphertext C.
+           Intermediate values b(1), b(2)...c(i) are required.  Encryption
+           is performed in the following manner ('+' indicates
+           concatenation):
 
-      b(1) = MD5(S + R + A)    c(1) = p(1) xor b(1)   C = c(1)
-      b(2) = MD5(S + c(1))     c(2) = p(2) xor b(2)   C = C + c(2)
-                  .                      .
-                  .                      .
-                  .                      .
-      b(i) = MD5(S + c(i-1))   c(i) = p(i) xor b(i)   C = C + c(i)
+        b(1) = MD5(S + R + A)    c(1) = p(1) xor b(1)   C = c(1)
+        b(2) = MD5(S + c(1))     c(2) = p(2) xor b(2)   C = C + c(2)
+                    .                      .
+                    .                      .
+                    .                      .
+        b(i) = MD5(S + c(i-1))   c(i) = p(i) xor b(i)   C = C + c(i)
 
-      The   resulting   encrypted   String   field    will    contain
-      c(1)+c(2)+...+c(i).
+        The   resulting   encrypted   String   field    will    contain
+        c(1)+c(2)+...+c(i).
     """
-    i = ((len(plain_text)-1) >> 4) + 1 << 4
+    i = ((len(plain_text) - 1) >> 4) + 1 << 4
     c = request_authenticator + salt
-    result = b''
+    result = b""
     for x in range(0, i, 16):
         b = hashlib.md5(secret + c).digest()
-        c = xor(plain_text[x:x+16], b)
+        c = xor(plain_text[x : x + 16], b)
         result += c
 
     return result
@@ -278,4 +285,3 @@ def radius_encrypt_keys(plain_text, secret, request_authenticator, salt):
 
 def xor(str1, str2):
     return bytes(map(lambda s1, s2: s1 ^ s2, str1, str2))
-

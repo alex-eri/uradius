@@ -3,12 +3,12 @@ import ipaddress
 
 import logging
 
-loader = logging.getLogger('TLS CA')
+logger = logging.getLogger('TLS CA')
 
 def check_expired_cert(cert_pem):
     from cryptography import x509
     cert = x509.load_pem_x509_certificate(cert_pem)
-    valid_timedelta = cert_data.not_valid_after_utc - datetime.utcnow()
+    valid_timedelta = cert.not_valid_after_utc - datetime.utcnow()
     if valid_timedelta < timedelta(days=0, seconds=0):
         logging.error('TLS Cert expires in %s hours', valid_timedelta.seconds//3600)
         return True
