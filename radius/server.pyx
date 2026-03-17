@@ -101,12 +101,10 @@ async def main(**args):
 
         ca_k = None
         if os.path.isfile(args['tls_ca_key']):
-            with open(args['tls_ca_key']) as f:
+            with open(args['tls_ca_key'], 'rb') as f:
                 ca_k = tlscert.load_key(f.read())
 
         if new_ca or not ca_k:
-            import socket
-
             ca_c_pem, ca_k_pem, ca_c, ca_k = tlscert.generate_selfsigned_ca(
                     socket.gethostname(), key=ca_k
                     )

@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import ipaddress
 
 import logging
@@ -8,7 +8,7 @@ logger = logging.getLogger('TLS CA')
 def check_expired_cert(cert_pem):
     from cryptography import x509
     cert = x509.load_pem_x509_certificate(cert_pem)
-    valid_timedelta = cert.not_valid_after_utc - datetime.utcnow()
+    valid_timedelta = cert.not_valid_after_utc - datetime.now(timezone.utc)
     if valid_timedelta < timedelta(days=0, seconds=0):
         logging.error('TLS Cert expires in %s hours', valid_timedelta.seconds//3600)
         return True
@@ -29,9 +29,10 @@ def load_cert(cert_pem):
 def load_key(key_pem):
     from cryptography.hazmat.primitives.serialization import load_pem_private_key
     try:
-        return load_pem_private_key(key_pem)
-    except:
+        return load_pem_private_key(key_pem,None)
+    except Exception as e:
         logger.error('Key corrupted')
+        logger.error(e)
 
 def generate_selfsigned_ca(hostname, ip_addresses=None, key=None):
     """Generates self signed certificate for a hostname, and optional IP addresses."""
