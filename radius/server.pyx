@@ -100,7 +100,7 @@ async def main(**args):
             args['tls_ca_key'] = args['tls_ca_cert']
 
         ca_k = None
-        if os.path.isfile(args['tls_ca_key'])
+        if os.path.isfile(args['tls_ca_key']):
             with open(args['tls_ca_key']) as f:
                 ca_k = tlscert.load_key(f.read())
 
