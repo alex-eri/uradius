@@ -53,7 +53,7 @@ class AbstractProtocol(asyncio.Protocol):
             nas = await nas_cached(self.handler.on_nas)(request)
             request.nas = nas
         except Exception as e:
-            logger.error('In cache')
+            logger.error('In nas')
             logger.error(repr(e))
         if not nas:
             return
