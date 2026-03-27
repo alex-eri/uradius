@@ -116,7 +116,7 @@ class Dictionary:
         pass
 
     def load(self, f, vendor=None, protocol='RADIUS'):
-        logging.debug(f)
+        logging.debug(f'Loading dictionary: {f}')
         with open(f, 'r') as d:
             for line in d:
                 line = line.strip()
@@ -184,6 +184,6 @@ class Dictionary:
                     logging.critical(e)
                     raise e
 
-        logging.debug(str(f) + ' loaded')
+        logging.debug(f'Dictionary {f} loaded')
 
 
