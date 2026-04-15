@@ -142,7 +142,7 @@ class Packet:
         elif type(key) in [int, tuple]:
             key = self.d.attributes(key)
         if self.__attrs[key]:
-            return self.decode(key, self.__attrs[key][-1])
+            return self.decode(key, self.__attrs[key][index])
 
     def __setitem__(self, key, v):
         if type(key) == str:
@@ -281,7 +281,6 @@ class Packet:
             except ValueError as e:
                 logging.error(e)
                 logging.info((repr(key), repr(v)))
-
         return v
 
     @staticmethod

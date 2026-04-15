@@ -1,17 +1,8 @@
 import asyncio
 from . import constants as C
 from .packet import Packet
-from cachetools import TTLCache
-from asyncache import cached
 import logging
 logger = logging.getLogger('protocol')
-
-def nas_cache_key(request, *args, **kwargs):
-    return request.remote
-
-nas_cache = TTLCache(1024, 1000)
-nas_cached = cached(nas_cache, key=nas_cache_key)
-
 
 class AbstractProtocol(asyncio.Protocol):
     def __init__(self, handler, *a, **kw):
@@ -50,7 +41,7 @@ class AbstractProtocol(asyncio.Protocol):
         request.parse()
         nas = None
         try:
-            nas = await nas_cached(self.handler.on_nas)(request)
+            nas = await self.handler.on_nas(request)
             request.nas = nas
         except Exception as e:
             logger.error('In nas')
