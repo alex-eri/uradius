@@ -1,38 +1,43 @@
 from datetime import datetime, timedelta, timezone
 import ipaddress
-
 import logging
+import socket
 
-logger = logging.getLogger('TLS CA')
+logger = logging.getLogger("TLS CA")
+
 
 def check_expired_cert(cert_pem):
     from cryptography import x509
+
     cert = x509.load_pem_x509_certificate(cert_pem)
     valid_timedelta = cert.not_valid_after_utc - datetime.now(timezone.utc)
     if valid_timedelta < timedelta(days=0, seconds=0):
-        logging.error('TLS Cert expires in %s hours', valid_timedelta.seconds//3600)
+        logging.error("TLS Cert expires in %s hours", valid_timedelta.seconds // 3600)
         return True
     if valid_timedelta < timedelta(days=1):
-        logging.error('TLS Cert expires in %s hours', valid_timedelta.seconds//3600)
+        logging.error("TLS Cert expires in %s hours", valid_timedelta.seconds // 3600)
         return True
     if valid_timedelta < timedelta(days=30):
-        logging.warning('TLS Cert expires in %s days', valid_timedelta.days)
+        logging.warning("TLS Cert expires in %s days", valid_timedelta.days)
         return True
     return False
 
 
 def load_cert(cert_pem):
     from cryptography import x509
+
     return x509.load_pem_x509_certificate(cert_pem)
-    
+
 
 def load_key(key_pem):
     from cryptography.hazmat.primitives.serialization import load_pem_private_key
+
     try:
-        return load_pem_private_key(key_pem,None)
+        return load_pem_private_key(key_pem, None)
     except Exception as e:
-        logger.error('Key corrupted')
+        logger.error("Key corrupted")
         logger.error(e)
+
 
 def generate_selfsigned_ca(hostname, ip_addresses=None, key=None):
     """Generates self signed certificate for a hostname, and optional IP addresses."""
@@ -51,12 +56,23 @@ def generate_selfsigned_ca(hostname, ip_addresses=None, key=None):
             backend=default_backend(),
         )
 
-    name = x509.Name([
-        x509.NameAttribute(NameOID.COMMON_NAME, hostname+" CA")
-    ])
+    name = x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, hostname + " CA")])
 
     # path_len=0 means this cert can only sign itself, not other certs.
     basic_contraints = x509.BasicConstraints(ca=True, path_length=1)
+
+    usage = x509.KeyUsage(
+        key_cert_sign=True,
+        crl_sign=True,
+        digital_signature=False,
+        content_commitment=False,
+        key_encipherment=False,
+        data_encipherment=False,
+        key_agreement=False,
+        encipher_only=False,
+        decipher_only=False,
+    )
+
     now = datetime.utcnow()
     cert = (
         x509.CertificateBuilder()
@@ -65,8 +81,9 @@ def generate_selfsigned_ca(hostname, ip_addresses=None, key=None):
         .public_key(key.public_key())
         .serial_number(1000)
         .not_valid_before(now)
-        .not_valid_after(now + timedelta(days=25*365))
+        .not_valid_after(now + timedelta(days=25 * 365))
         .add_extension(basic_contraints, False)
+        .add_extension(usage, True)
         .sign(key, hashes.SHA256(), default_backend())
     )
     cert_pem = cert.public_bytes(encoding=serialization.Encoding.PEM)
@@ -79,9 +96,9 @@ def generate_selfsigned_ca(hostname, ip_addresses=None, key=None):
     return cert_pem, key_pem, cert, key
 
 
-
-
-def generate_selfsigned_cert(hostname, ip_addresses=None, ca=None, cakey=None, key=None):
+def generate_selfsigned_cert(
+    hostname, ip_addresses=None, ca=None, cakey=None, key=None
+):
     """Generates self signed certificate for a hostname, and optional IP addresses."""
     from cryptography import x509
     from cryptography.x509.oid import NameOID
@@ -98,9 +115,7 @@ def generate_selfsigned_cert(hostname, ip_addresses=None, ca=None, cakey=None, k
             backend=default_backend(),
         )
 
-    name = x509.Name([
-        x509.NameAttribute(NameOID.COMMON_NAME, hostname)
-    ])
+    name = x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, hostname)])
 
     # best practice seem to be to include the hostname in the SAN, which *SHOULD* mean COMMON_NAME is ignored.
     alt_names = [x509.DNSName(hostname)]
@@ -112,9 +127,12 @@ def generate_selfsigned_cert(hostname, ip_addresses=None, ca=None, cakey=None, k
             alt_names.append(x509.DNSName(addr))
             # ... whereas golang's crypto/tls is stricter, and needs IPAddresses
             # note: older versions of cryptography do not understand ip_address objects
-            alt_names.append(x509.IPAddress(ipaddress.ip_address(addr)))
+            ip_ex = socket.gethostbyname_ex(addr)
+            for ip in ip_ex[2]:
+                alt_names.append(x509.IPAddress(ipaddress.ip_address(ip)))
+                alt_names.append(x509.DNSName(ip))
 
-    san = x509.SubjectAlternativeName(alt_names)
+    san = x509.SubjectAlternativeName(set(alt_names))
 
     # path_len=0 means this cert can only sign itself, not other certs.
     basic_contraints = x509.BasicConstraints(ca=False, path_length=None)
@@ -126,7 +144,7 @@ def generate_selfsigned_cert(hostname, ip_addresses=None, ca=None, cakey=None, k
         .public_key(key.public_key())
         .serial_number(1001)
         .not_valid_before(now)
-        .not_valid_after(now + timedelta(days=1*365))
+        .not_valid_after(now + timedelta(days=1 * 365))
         .add_extension(basic_contraints, False)
         .add_extension(san, False)
         # .sign(key, hashes.SHA256(), default_backend())
@@ -141,4 +159,6 @@ def generate_selfsigned_cert(hostname, ip_addresses=None, ca=None, cakey=None, k
         encryption_algorithm=serialization.NoEncryption(),
     )
 
-    return cert_pem, key_pem
+
+
+    return  cert_pem + ca.public_bytes(encoding=serialization.Encoding.PEM) , key_pem

@@ -3,6 +3,8 @@ from . import constants as C
 from .packet import Packet
 import logging
 logger = logging.getLogger('protocol')
+import sys
+import traceback
 
 class AbstractProtocol(asyncio.Protocol):
     def __init__(self, handler, *a, **kw):
@@ -28,9 +30,11 @@ class AbstractProtocol(asyncio.Protocol):
         self.transport = transport
 
     def connection_lost(self, exc):
+        if exc:
+            logger.warning(exc, exc_info=(type(exc),exc, traceback.format_exc() ))
         self.transport = None
 
-    async def request(self, data, addr):
+    async def request(self, data, addr, radsec=False):
         logger.debug(addr)
         request = Packet(
             data=data,
@@ -48,7 +52,7 @@ class AbstractProtocol(asyncio.Protocol):
             logger.error(repr(e))
         if not nas:
             return
-        request.secret = nas['secret']
+        request.secret = 'radsec' if radsec else nas['secret']
         try:
             request.check()
         except Exception as e:
@@ -104,9 +108,12 @@ class TCPProtocol(AbstractProtocol):
 class RadsecProtocol(TCPProtocol):
     "TCP wrapped into TLS, secret always 'radsec'"
     "TODO cert check"
+
+    async def request(self, data, addr, radsec=False):
+        return await super().request(data, addr, radsec=True)
+
     async def responce(self, request, responce):
-        responce.secret = b'radsec'
-        super().responce(request, responce)
+        return await super().responce(request, responce)
 
 
 class UDPProtocol(AbstractProtocol):

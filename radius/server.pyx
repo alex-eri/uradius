@@ -117,16 +117,14 @@ async def main(**args):
             with open(args['tls_ca_cert'], mode) as f:
                 f.write(ca_c_pem)
         else:
-
             with open(args['tls_ca_key'], 'rb') as f:
                 ca_k = tlscert.load_key(f.read())
 
             with open(args['tls_ca_cert'], 'rb') as f:
                 ca_c = tlscert.load_cert(f.read())
 
-
         c, k = tlscert.generate_selfsigned_cert(
-                    socket.gethostname(), ca=ca_c, cakey=ca_k
+                    socket.getfqdn(), ca=ca_c, cakey=ca_k, ip_addresses=args.get('ip_addresses')
                     )
         os.makedirs(pathlib.Path(args['tls_cert']).parent, exist_ok=True)
         with open(args['tls_cert'], 'wb') as f:
@@ -178,10 +176,12 @@ async def main(**args):
         server_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
         server_context.check_hostname = False
         server_context.verify_mode = ssl.CERT_OPTIONAL
+
         try:
             server_context.load_cert_chain(
                     args['tls_cert'],
                     args['tls_key'])
+            server_context.load_verify_locations(args['tls_ca_cert'])
 
         except FileNotFoundError as e:
             logger.critical("Certificates not found")
@@ -222,7 +222,8 @@ def run():
     parser.add_argument("--tls-key", default=(pathlib.Path(__file__).parent / 'certs' / 'ssl_key.pem') )
     parser.add_argument("--tcp-ports",nargs='*', type=int, default=[1812,1813])
     parser.add_argument("--udp-ports",nargs='*', type=int, default=[1812,1813])
-    parser.add_argument("--tls-ports",nargs='*', type=int, default=[2083,2084])
+    parser.add_argument("--tls-ports",nargs='*', type=int, default=[2083])
+    parser.add_argument("--ip-addresses", nargs='*', type=str, default=[])
     args = parser.parse_args()
 
     level = logging.ERROR

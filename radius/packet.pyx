@@ -56,6 +56,9 @@ class Packet:
         self.__ma_cursor = None
         self.__reply = None
 
+    def __repr__(self) -> str:
+        return f'{repr(type(self))}({self.remote},{self.Code}): {dict(self.items())}'
+
     def coa(self, code):
         data = bytearray(20)
         data[3] = 0
