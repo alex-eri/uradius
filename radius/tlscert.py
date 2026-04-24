@@ -2,7 +2,7 @@ from datetime import datetime, timedelta, timezone
 import ipaddress
 import logging
 import socket
-
+from cryptography import x509
 logger = logging.getLogger("TLS CA")
 
 
@@ -79,7 +79,7 @@ def generate_selfsigned_ca(hostname, ip_addresses=None, key=None):
         .subject_name(name)
         .issuer_name(name)
         .public_key(key.public_key())
-        .serial_number(1000)
+        .serial_number(x509.random_serial_number())
         .not_valid_before(now)
         .not_valid_after(now + timedelta(days=25 * 365))
         .add_extension(basic_contraints, False)
@@ -97,7 +97,7 @@ def generate_selfsigned_ca(hostname, ip_addresses=None, key=None):
 
 
 def generate_selfsigned_cert(
-    hostname, ip_addresses=None, ca=None, cakey=None, key=None
+    hostname, ip_addresses=None, ca:x509.Certificate=None, cakey=None, key=None
 ):
     """Generates self signed certificate for a hostname, and optional IP addresses."""
     from cryptography import x509
@@ -136,29 +136,45 @@ def generate_selfsigned_cert(
 
     # path_len=0 means this cert can only sign itself, not other certs.
     basic_contraints = x509.BasicConstraints(ca=False, path_length=None)
+
+
+    usage = x509.KeyUsage(
+        key_cert_sign=False,
+        crl_sign=False,
+        digital_signature=True,
+        content_commitment=False,
+        key_encipherment=True,
+        data_encipherment=False,
+        key_agreement=False,
+        encipher_only=False,
+        decipher_only=False,
+    )
+
+    extended_key_usage = x509.ExtendedKeyUsage([
+        x509.ExtendedKeyUsageOID.SERVER_AUTH,
+        x509.ExtendedKeyUsageOID.CLIENT_AUTH
+    ])
+
     now = datetime.utcnow()
     cert = (
         x509.CertificateBuilder()
         .subject_name(name)
-        .issuer_name(name)
+        .issuer_name(ca.subject)
         .public_key(key.public_key())
-        .serial_number(1001)
+        .serial_number(x509.random_serial_number())
         .not_valid_before(now)
         .not_valid_after(now + timedelta(days=1 * 365))
         .add_extension(basic_contraints, False)
+        .add_extension(usage, True)
+        .add_extension(extended_key_usage, False)
         .add_extension(san, False)
-        # .sign(key, hashes.SHA256(), default_backend())
         .sign(cakey, hashes.SHA256(), default_backend())
     )
-    # cert_pem = ca.public_bytes(encoding=serialization.Encoding.PEM)
-    # cert_pem += b'\n'
     cert_pem = cert.public_bytes(encoding=serialization.Encoding.PEM)
     key_pem = key.private_bytes(
         encoding=serialization.Encoding.PEM,
         format=serialization.PrivateFormat.TraditionalOpenSSL,
         encryption_algorithm=serialization.NoEncryption(),
     )
-
-
 
     return  cert_pem + ca.public_bytes(encoding=serialization.Encoding.PEM) , key_pem
