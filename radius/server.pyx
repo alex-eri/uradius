@@ -28,50 +28,63 @@ import socket
 import setproctitle
 from functools import partial
 
-def stream_process(handler, sock: socket.socket, ssl=None):
-    addr = sock.getsockname()
-    setproctitle.setproctitle(f'radius { "radsec" if ssl else "tcp" } {addr[0]}:{addr[1]}')
+def stream_process(handler, socks: list[socket.socket], ssl=None):
+    setproctitle.setproctitle(f'radius { "radsec" if ssl else "tcp" }')
     loop = asyncio.new_event_loop()
     if ssl:
         protocol_factory = partial(RadsecProtocol,handler(loop))
     else:
         protocol_factory = partial(TCPProtocol,handler(loop))
-    server = loop.run_until_complete(
-        loop.create_server(protocol_factory, sock=sock, ssl=ssl)
-        )
+    servers = []
+    for sock in socks:
+        server = loop.run_until_complete(
+            loop.create_server(protocol_factory, sock=sock, ssl=ssl)
+            )
+        servers.append(server)
     try:
         loop.run_forever()
     finally:
-        server.close()
-        loop.run_until_complete(server.wait_closed())
+        for server in servers:
+            server.close()
+        loop.run_until_complete(asyncio.gather(*[server.wait_closed() for server in servers]))
         # loop.run_until_complete(server.get_protocol().wait_closed())
         loop.close()
 
-def stream_process_pool(handler, port, ssl=None, n=4):
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.bind(('', port))
-    processes = [ multiprocessing.Process(target=stream_process, args=(handler, sock, ssl), name=f"tcp {port} #{i}") for i in range(n) ]
+def stream_process_pool(handler, ports, ssl=None, n=4):
+    socks = []
+    for port in ports:
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.bind(('', port))
+        socks.append(sock)
+    processes = [ multiprocessing.Process(target=stream_process, args=(handler, socks, ssl), name=f"tcp {ports} #{i}") for i in range(n) ]
     return processes
 
 
-def udp_process(handler, sock):
-    addr = sock.getsockname()
-    setproctitle.setproctitle(f'radius udp {addr[0]}:{addr[1]}')
+def udp_process(handler, socks: list[socket.socket]):
+    setproctitle.setproctitle(f'radius udp')
     loop = asyncio.new_event_loop()
     protocol_factory = partial(UDPProtocol,handler(loop))
-    transport, protocol = loop.run_until_complete(
-        loop.create_datagram_endpoint(protocol_factory, sock=sock)
-        )
+    servers = []
+    for sock in socks:
+        transport, protocol = loop.run_until_complete(
+            loop.create_datagram_endpoint(protocol_factory, sock=sock)
+            )
+        servers.append(transport)
     try:
         loop.run_forever()
     finally:
-        transport.close()
+        for server in servers:
+            server.close()
+        loop.run_until_complete(asyncio.gather(*[server.wait_closed() for server in servers]))
         loop.close()
 
-def udp_process_pool(handler, port, n=4):
-    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    sock.bind(('', port))
-    processes = [ multiprocessing.Process(target=udp_process, args=(handler, sock), name=f"udp {port} #{i}") for i in range(n) ]
+def udp_process_pool(handler, ports, n=4):
+    socks = []
+    for port in ports:
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        sock.bind(('', port))
+        socks.append(sock)
+    processes = [ multiprocessing.Process(target=udp_process, args=(handler, socks), name=f"udp {port} #{i}") for i in range(n) ]
     return processes
 
 
@@ -126,6 +139,7 @@ async def main(**args):
         c, k = tlscert.generate_selfsigned_cert(
                     socket.getfqdn(), ca=ca_c, cakey=ca_k, ip_addresses=args.get('ip_addresses')
                     )
+
         os.makedirs(pathlib.Path(args['tls_cert']).parent, exist_ok=True)
         with open(args['tls_cert'], 'wb') as f:
             f.write(c)
@@ -165,8 +179,8 @@ async def main(**args):
             udp_workers = 1
         else:
             udp_workers = args['workers']
-        for port in args['udp_ports']:
-            servers.extend(udp_process_pool(handler, port, n=udp_workers))
+        
+        servers.extend(udp_process_pool(handler, args['udp_ports'], n=udp_workers))
 
     if args.get('tcp'):
         for port in args['tcp_ports']:
@@ -188,8 +202,8 @@ async def main(**args):
             raise e
         except Exception as e:
             raise e
-        for port in args['tls_ports']:
-            servers.extend(stream_process_pool(handler, port, ssl=server_context, n=args['workers']))
+        
+        servers.extend(stream_process_pool(handler, args['tls_ports'], ssl=server_context, n=args['workers']))
         
     return servers
 

@@ -127,10 +127,16 @@ def generate_selfsigned_cert(
             alt_names.append(x509.DNSName(addr))
             # ... whereas golang's crypto/tls is stricter, and needs IPAddresses
             # note: older versions of cryptography do not understand ip_address objects
-            ip_ex = socket.gethostbyname_ex(addr)
-            for ip in ip_ex[2]:
-                alt_names.append(x509.IPAddress(ipaddress.ip_address(ip)))
-                alt_names.append(x509.DNSName(ip))
+            logger.info(f"Add IP address: {addr}")
+            try:
+                ip_ex = socket.gethostbyname_ex(addr)
+                for ip in ip_ex[2]:
+                    alt_names.append(x509.IPAddress(ipaddress.ip_address(ip)))
+                    alt_names.append(x509.DNSName(ip))
+            except socket.gaierror:
+                logger.warning(f"Failed to resolve IP address: {addr}")
+                continue
+
 
     san = x509.SubjectAlternativeName(set(alt_names))
 
