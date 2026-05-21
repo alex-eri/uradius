@@ -39,7 +39,7 @@ ext_modules = list(
     cythonize(
         glob("radius/*.pyx") + glob("radius/mschap/*.py"),
         compiler_directives={"language_level": "3"},
-        emit_linenums=False,
+        # emit_linenums=False,
     )
 )
 ext_modules.append(

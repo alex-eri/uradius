@@ -172,7 +172,7 @@ async def main(**args):
         from .eap.session import EAP
         handler_bases =  [Handler, EAP]
 
-    handler = partial( type('Handler', tuple(handler_bases), {'c': C}), dct, args)
+    handler = partial( type('URadiusHandler', tuple(handler_bases), {'c': C}), dct, args)
 
     if args.get('udp'):
         if args.get('eap'):
