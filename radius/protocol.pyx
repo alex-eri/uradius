@@ -17,7 +17,7 @@ class AbstractProtocol(asyncio.Protocol):
 
     async def wait_closed(self):
         await self.handler.on_close()
-        return await super().wait_closed()
+        #return await super().wait_closed()
 
     @property
     def coa_counter(self):
@@ -31,7 +31,7 @@ class AbstractProtocol(asyncio.Protocol):
 
     def connection_lost(self, exc):
         if exc:
-            logger.warning(exc, exc_info=(type(exc),exc, traceback.format_exc() ))
+            logger.warning(exc, exc_info=exc)
         self.transport = None
 
     async def request(self, data, addr, radsec=False):
@@ -72,13 +72,21 @@ class AbstractProtocol(asyncio.Protocol):
                 await self.handler.on_accept(request, responce)
             elif responce.Code == C.AccessReject:
                 await self.handler.on_reject(request, responce)
-        elif request.Code == C.AccountingRequest:
+            await self.responce(request, responce)
+            return
+
+        if request.Code == C.AccountingRequest:
             responce = request.reply(C.AccountingResponse)
             await self.handler.on_acct(request, responce)
-        elif request.Code in [C.DisconnectACK, C.DisconnectNAK, C.CoAACK, C.CoANAK]:
+            await self.responce(request, responce)
+            return
+            
+        if request.Code in [C.DisconnectACK, C.DisconnectNAK, C.CoAACK, C.CoANAK]:
             self.coas[(request.Identifier, request.remote)].set_result(request)
+            return
 
-        await self.responce(request, responce)
+    def data_send(self, data, remote):
+        raise NotImplementedError()
 
     async def responce(self, request, responce):
         self.data_send(responce.build(), request.remote)
@@ -96,6 +104,7 @@ class AbstractProtocol(asyncio.Protocol):
 
 
 class TCPProtocol(AbstractProtocol):
+    transport: asyncio.transports.Transport
 
     def data_send(self, data, addr=None):
         self.transport.write(data)
@@ -117,6 +126,7 @@ class RadsecProtocol(TCPProtocol):
 
 
 class UDPProtocol(AbstractProtocol):
+    transport: asyncio.transports.DatagramTransport
 
     def data_send(self, data, addr):
         self.transport.sendto(data, addr)

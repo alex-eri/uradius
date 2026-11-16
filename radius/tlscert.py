@@ -6,18 +6,20 @@ from cryptography import x509
 logger = logging.getLogger("TLS CA")
 
 
-def check_expired_cert(cert_pem):
+def check_expired_cert(cert_pem, days=30):
+    """ returns False if valid """
+    
     from cryptography import x509
 
     cert = x509.load_pem_x509_certificate(cert_pem)
     valid_timedelta = cert.not_valid_after_utc - datetime.now(timezone.utc)
     if valid_timedelta < timedelta(days=0, seconds=0):
-        logging.error("TLS Cert expires in %s hours", valid_timedelta.seconds // 3600)
+        logging.error("TLS Cert expired %s hours ago", valid_timedelta.seconds // 3600)
         return True
     if valid_timedelta < timedelta(days=1):
         logging.error("TLS Cert expires in %s hours", valid_timedelta.seconds // 3600)
         return True
-    if valid_timedelta < timedelta(days=30):
+    if valid_timedelta < timedelta(days=days):
         logging.warning("TLS Cert expires in %s days", valid_timedelta.days)
         return True
     return False
